@@ -1,4 +1,4 @@
-mat-form-field {
-  width: 100%;
-  margin-bottom: 16px;
-}
+/* 共通スタイルをインポート */
+@use '../../../../styles.scss' as *;
+
+/* このダイアログ固有のスタイルがあれば記述 */

@@ -1,20 +1,129 @@
-@use "@angular/material" as mat;
+/* Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
-html {
-  color-scheme: light;
-  @include mat.theme(
-    (
-      color: mat.$rose-palette,
-      density: 0,
-    )
-  );
+:root {
+  // カラーパレット
+  --primary-color: #2c3e50; // ダークブルー
+  --secondary-color: #34495e; // 少し明るいダークブルー
+  --accent-color: #1abc9c; // ティール
+  --accent-color-hover: #16a085; // ティール（ホバー時）
+
+  --text-color: #343a40; // ダークグレー
+  --text-color-light: #7f8c8d; // ライトグレー
+
+  --bg-color: #f8f9fa; // オフホワイト
+  --surface-color: #ffffff; // カードなどの背景色
+  --border-color: #ecf0f1; // 境界線
+
+  // タイポグラフィ
+  --font-family: 'Roboto', sans-serif;
+
+  // その他
+  --border-radius: 8px;
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --transition-speed: 0.3s ease;
 }
 
-html,
+/* 基本設定 */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
 body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  background-image: url('/back_ground.jpeg');
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+/* ダイアログ共通スタイル */
+.dialog-container {
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
-body {
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
+
+.dialog-title {
+  padding: 20px 24px 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dialog-content {
+  padding: 24px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  background-color: #fafafa;
+}
+
+.form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+.full-width-field {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.half-width-field {
+  width: calc(50% - 8px);
+  margin-bottom: 16px;
+}
+
+
+/* Angular Material コンポーネントのグローバルな上書き */
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--box-shadow) !important;
+}
+
+.mat-mdc-card {
+  box-shadow: var(--box-shadow) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+.mat-mdc-button.mat-primary {
+  --mdc-protected-button-container-color: var(--primary-color);
+  --mdc-protected-button-label-text-color: #fff;
+}
+
+.mat-mdc-raised-button.mat-primary {
+  --mdc-protected-button-container-color: var(--primary-color);
+  --mdc-protected-button-label-text-color: #fff;
+}
+
+.mat-mdc-flat-button.mat-primary {
+  --mdc-protected-button-container-color: transparent;
+  --mdc-protected-button-label-text-color: var(--primary-color);
+}
+
+.mat-toolbar.mat-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.mat-mdc-checkbox .mdc-checkbox__native-control:enabled:checked~.mdc-checkbox__background {
+  background-color: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+}
+
+.mat-mdc-form-field-focus-overlay {
+  background-color: var(--primary-color) !important;
+}
+
+.mat-mdc-form-field.mat-focused .mat-mdc-form-field-label {
+  color: var(--primary-color) !important;
 }

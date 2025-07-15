@@ -59,7 +59,7 @@
         <div class="stars">
           <mat-icon *ngFor="let star of maxStarsArray; let i = index" (click)="setRating(i + 1)" [ngClass]="{'filled-star': getStarIcon(data.evaluation, i) !== 'star_border'}">{{ getStarIcon(data.evaluation, i) }}</mat-icon>
         </div>
-        <mat-form-field appearance="outline" class="comment-field">
+        <mat-form-field appearance="outline" class="comment-field" >
           <mat-label>ひとこと</mat-label>
           <input matInput [(ngModel)]="data.comment" placeholder="(例)またやりたい！" maxlength="30">
           <mat-hint align="end">{{data.comment?.length || 0}} / 30</mat-hint>
