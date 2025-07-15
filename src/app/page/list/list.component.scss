@@ -1,0 +1,77 @@
+.body {
+  padding: 20px;
+}
+
+.app-logo {
+  display: block;
+  margin: 0 auto 20px auto; /* Center the logo and add bottom margin */
+  width: 100%; /* Make it take full width of its parent */
+  height: 150px; /* Fixed vertical height */
+  object-fit: cover; /* Maintain aspect ratio, cropping if necessary */
+  overflow: hidden; /* Ensure content outside the height is hidden */
+}
+
+.filter-input {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.table-responsive-container {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 700px; /* Adjust as needed to prevent excessive squeezing */
+}
+
+.tooltip {
+  white-space: pre-line;
+}
+
+/* スタイルを追加 */
+.name-cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 要素間にスペースを均等に配置 */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .body {
+    padding: 10px;
+  }
+
+  .app-logo {
+    margin-bottom: 15px;
+    /* It will naturally be 100% of body minus padding */
+  }
+
+  .filter-input {
+    margin-bottom: 10px;
+  }
+
+  button[mat-raised-button] {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .mat-column-min,
+  .mat-column-max,
+  .mat-column-time {
+    display: none; /* Hide less critical columns on small screens */
+  }
+
+  .mat-column-name {
+    min-width: 150px; /* Ensure name column is readable */
+  }
+
+  .mat-column-evaluation,
+  .mat-column-averageEvaluation {
+    min-width: 180px; /* Increased min-width for evaluation columns */
+  }
+
+  .mat-column-actions {
+    min-width: 80px; /* Ensure actions column is readable */
+  }
+}

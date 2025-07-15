@@ -1,0 +1,90 @@
+<div class="body">
+  <img src="/bg_manager_logo.png" alt="BG Manager Logo" class="app-logo">
+  <mat-form-field class="filter-input">
+    <mat-label>Filter</mat-label>
+    <input matInput (keyup)="applyFilter($event)" placeholder="条件" />
+  </mat-form-field>
+
+  <button mat-raised-button color="primary" (click)="openAddBoardGameDialog()" *ngIf="isAdmin$ | async">
+    <mat-icon>add</mat-icon> ボードゲームを追加
+  </button>
+
+  <div class="table-responsive-container">
+    <table mat-table [dataSource]="dataSource" class="table" matSort>
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>名前</th>
+      <td mat-cell *matCellDef="let element">
+        <div class="name-cell-content">
+          <span>{{ element.name }}</span>
+          <button mat-icon-button (click)="openGoogleImageSearch(element.name)" matTooltip="画像検索">
+            <mat-icon>image</mat-icon>
+          </button>
+        </div>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="tags">
+      <th mat-header-cell *matHeaderCellDef>タグ</th>
+      <td mat-cell *matCellDef="let element">
+        <mat-chip-listbox>
+          <mat-chip *ngFor="let tag of element.tags">{{tag}}</mat-chip>
+        </mat-chip-listbox>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="min">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>最少人数</th>
+      <td mat-cell *matCellDef="let element">{{ element.min }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="max">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>最大人数</th>
+      <td mat-cell *matCellDef="let element">{{ element.max }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="time">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>所用時間(分)</th>
+      <td mat-cell *matCellDef="let element">{{ element.time }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="played">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>プレイ済み</th>
+      <td mat-cell *matCellDef="let element">
+        <mat-checkbox [checked]="element.anyPlayed" [disabled]="true"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="evaluation">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>あなたの評価</th>
+      <td mat-cell *matCellDef="let element">
+        <mat-icon *ngFor="let star of maxStarsArray; let i = index"
+                  [ngClass]="{'filled-star': getStarIcon(element.evaluation, i) !== 'star_border'}">
+          {{ getStarIcon(element.evaluation, i) }}
+        </mat-icon>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="averageEvaluation">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>平均評価</th>
+      <td mat-cell *matCellDef="let element">
+        <mat-icon *ngFor="let star of maxStarsArray; let i = index"
+                  [ngClass]="{'filled-star': getStarIcon(element.averageEvaluation, i) !== 'star_border'}">
+          {{ getStarIcon(element.averageEvaluation, i) }}
+        </mat-icon>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>アクション</th>
+      <td mat-cell *matCellDef="let element">
+        <button mat-icon-button (click)="openEditUserDataDialog(element)" matTooltip="評価・プレイ状況を編集">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+  </div>
+</div>

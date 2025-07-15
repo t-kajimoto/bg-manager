@@ -1,0 +1,41 @@
+<h1 mat-dialog-title>新しいボードゲームを追加</h1>
+<div mat-dialog-content>
+  <mat-form-field>
+    <mat-label>名前</mat-label>
+    <input matInput [(ngModel)]="data.name">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>最少人数</mat-label>
+    <input matInput type="number" [(ngModel)]="data.min">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>最大人数</mat-label>
+    <input matInput type="number" [(ngModel)]="data.max">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>所用時間(分)</mat-label>
+    <input matInput type="number" [(ngModel)]="data.time">
+  </mat-form-field>
+
+  <mat-form-field class="tag-chip-list">
+    <mat-label>タグ</mat-label>
+    <mat-chip-grid #chipGrid aria-label="タグを入力">
+      <mat-chip-row *ngFor="let tag of data.tags" (removed)="removeTag(tag)">
+        {{tag}}
+        <button matChipRemove [attr.aria-label]="'remove ' + tag">
+          <mat-icon>cancel</mat-icon>
+        </button>
+      </mat-chip-row>
+    </mat-chip-grid>
+    <input placeholder="新しいタグ..." [matChipInputFor]="chipGrid" [matChipInputAddOnBlur]="true" (matChipInputTokenEnd)="addTag($event)" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>所有者</mat-label>
+    <input matInput [(ngModel)]="data.ownerName">
+  </mat-form-field>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">キャンセル</button>
+  <button mat-button [mat-dialog-close]="data" cdkFocusInitial>追加</button>
+</div>

@@ -1,0 +1,12 @@
+<h1 mat-dialog-title>ニックネームの編集</h1>
+<div mat-dialog-content>
+  <p>新しいニックネームを入力してください。</p>
+  <mat-form-field appearance="fill">
+    <mat-label>ニックネーム</mat-label>
+    <input matInput [(ngModel)]="data.nickname" cdkFocusInitial>
+  </mat-form-field>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="onNoClick()">キャンセル</button>
+  <button mat-button [mat-dialog-close]="data.nickname" color="primary">保存</button>
+</div>

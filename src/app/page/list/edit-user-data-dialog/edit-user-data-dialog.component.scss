@@ -1,0 +1,141 @@
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.tag-chip-list {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.evaluation-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.evaluation-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.stars {
+  display: flex;
+  align-items: center;
+}
+
+.stars mat-icon {
+  cursor: pointer;
+  font-size: 36px;
+  color: #ccc;
+  transition: color 0.2s ease-in-out;
+  width: 36px;
+  height: 36px;
+}
+
+.stars mat-icon.filled-star {
+  color: gold;
+}
+
+.evaluation-guide {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.evaluation-guide p {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.evaluation-guide ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.evaluation-guide li {
+  margin-bottom: 5px;
+}
+
+.all-evaluations-section {
+  margin-top: 24px;
+}
+
+.user-photo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.mat-column-photo {
+  flex: 0 0 50px;
+  padding-left: 0;
+}
+
+.mat-column-name {
+  flex: 1;
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+.mat-column-evaluation {
+  flex: 0 0 180px;
+  text-align: right;
+}
+
+.mat-column-evaluation mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.mat-mdc-dialog-container .mat-mdc-dialog-content {
+  padding: 24px;
+}
+
+.mat-mdc-dialog-container .mat-mdc-dialog-actions {
+  padding: 16px 24px;
+  justify-content: flex-end;
+}
+
+mat-divider {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mat-mdc-dialog-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-content {
+    padding: 16px;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-actions {
+    padding: 8px 16px;
+  }
+}

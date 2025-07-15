@@ -1,0 +1,93 @@
+.example-spacer {
+  flex: 1 1 auto;
+}
+
+.user-info-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 10px;
+}
+
+.user-photo-toolbar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-display-name-toolbar {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+}
+
+mat-toolbar button[mat-icon-button] {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+}
+
+mat-toolbar button[mat-icon-button] mat-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+/* Fixed toolbar styles */
+mat-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Ensure it stays on top */
+}
+
+/* Adjust content below the fixed toolbar */
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensure host takes full viewport height */
+}
+
+router-outlet + * {
+  /* This targets the element rendered by router-outlet */
+  padding-top: 64px; /* Adjust based on toolbar height */
+  flex-grow: 1;
+}
+
+/* Responsive adjustments for toolbar */
+@media (max-width: 600px) {
+  .user-info-toolbar {
+    gap: 6px;
+    margin-right: 6px;
+  }
+
+  .user-photo-toolbar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .user-display-name-toolbar {
+    font-size: 0.8rem;
+    max-width: 70px;
+  }
+
+  mat-toolbar button[mat-icon-button] {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+  }
+
+  mat-toolbar button[mat-icon-button] mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  router-outlet + * {
+    padding-top: 56px; /* Adjust for smaller toolbar height on mobile */
+  }
+}
