@@ -152,7 +152,7 @@ export class ListComponent implements AfterViewInit, OnInit {
     // 現在のユーザーが管理者かどうかを非同期で取得します。
     const isAdmin = await firstValueFrom(this.isAdmin$);
     const dialogRef = this.dialog.open(EditUserDataDialogComponent, {
-      width: '600px',
+      width: '800px',
       // ダイアログに、編集対象のゲーム情報と管理者フラグを渡します。
       data: { ...game, isAdmin },
       viewContainerRef: this.viewContainerRef,
@@ -174,8 +174,8 @@ export class ListComponent implements AfterViewInit, OnInit {
       // --- オプティミスティックUI更新ここまで ---
 
       // 2. 次に、実際のデータベース更新処理をバックグラウンドで行います。
-      const { played, evaluation, ...boardGameData } = result;
-      const userData = { played, evaluation };
+      const { played, evaluation, comment, ...boardGameData } = result;
+      const userData = { played, evaluation, comment };
 
       try {
         // ユーザー個人のデータと、ボードゲーム自体のデータをそれぞれ更新します。

@@ -21,6 +21,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { BoardgameService } from '../../../services/boardgame.service';
 import { MatChipsModule, MatChipInputEvent } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 /**
  * ボードゲーム情報の編集を行うダイアログのコンポーネントです。
@@ -32,7 +33,7 @@ import { MatDividerModule } from '@angular/material/divider';
   standalone: true,
   imports: [
     CommonModule, MatFormFieldModule, MatInputModule, FormsModule, MatButtonModule,
-    MatDialogModule, MatCheckboxModule, MatIconModule, MatTableModule, MatChipsModule, MatDividerModule
+    MatDialogModule, MatCheckboxModule, MatIconModule, MatTableModule, MatChipsModule, MatDividerModule, MatExpansionModule
   ]
 })
 export class EditUserDataDialogComponent implements OnInit {
@@ -57,7 +58,7 @@ export class EditUserDataDialogComponent implements OnInit {
   /** 「みんなの評価」テーブルのデータソース */
   allEvaluationsDataSource = new MatTableDataSource<any>();
   /** 「みんなの評価」テーブルで表示する列の定義 */
-  displayedEvaluationColumns: string[] = ['photo', 'name', 'evaluation'];
+  displayedEvaluationColumns: string[] = ['photo', 'name', 'evaluation', 'comment'];
 
   /**
    * EditUserDataDialogComponentのコンストラクタです。

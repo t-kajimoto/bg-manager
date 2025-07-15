@@ -63,7 +63,8 @@ export class BoardgameService {
       return {
         userName: userProfile?.nickname ?? 'Unknown User',
         userPhotoUrl: userProfile?.photoURL ?? 'assets/default-user.png',
-        evaluation: data['evaluation']
+        evaluation: data['evaluation'],
+        comment: data['comment'] // ひとことコメントを追加
       };
     }));
 
@@ -95,11 +96,11 @@ export class BoardgameService {
         return combineLatest([allGames$, userGames$]).pipe(
           map(([games, userGames]) => {
             // ユーザーのプレイ状況を、ボードゲームIDですぐに検索できるようMap形式に変換します。
-            const userGamesMap = new Map(userGames.map(ug => [ug.boardGameId, { played: ug.played, evaluation: ug.evaluation }]));
+            const userGamesMap = new Map(userGames.map(ug => [ug.boardGameId, { played: ug.played, evaluation: ug.evaluation, comment: ug.comment }]));
 
             // 5. 各ゲーム情報に対して、さらに追加情報（平均評価など）を非同期で取得し、結合します。
             return games.map(game => {
-              const userData = userGamesMap.get(game.id) || { played: false, evaluation: 0 };
+              const userData = userGamesMap.get(game.id) || { played: false, evaluation: 0, comment: '' };
 
               // 特定のゲームに対する全ユーザーのプレイ状況を取得するためのクエリです。
               const allUserGamesQuery = query(collection(this.firestore, 'userBoardGames'), where('boardGameId', '==', game.id));

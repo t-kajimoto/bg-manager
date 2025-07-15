@@ -36,6 +36,8 @@ export interface IBoardGameUser {
   played: boolean;
   /** ログインしているユーザーによる、このゲームへの評価（例: 1から5の5段階評価） */
   evaluation: number;
+  /** ユーザーが残したひとことコメント */
+  comment?: string;
 }
 
 /**

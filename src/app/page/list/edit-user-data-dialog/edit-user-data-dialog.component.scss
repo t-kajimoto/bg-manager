@@ -1,141 +1,69 @@
-.section-title {
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin-top: 24px;
-  margin-bottom: 16px;
-}
+/* 全体的なコンテナとパディング */
+.dialog-container { display: flex; flex-direction: column; height: 100%; }
+.dialog-title { padding: 20px 24px 10px; border-bottom: 1px solid #e0e0e0; }
+.dialog-content { padding: 20px 24px; flex-grow: 1; overflow-y: auto; }
+.dialog-actions { padding: 16px 24px; border-top: 1px solid #e0e0e0; justify-content: flex-end; background-color: #fafafa; }
 
+/* セクションごとのスタイル */
+.dialog-section { margin-bottom: 24px; }
+.section-title { font-size: 1.1rem; font-weight: 500; color: #424242; margin-bottom: 16px; }
+mat-divider { margin: 24px 0; }
+
+/* 基本情報グリッド (Flexboxベースに変更) */
 .info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px; /* 左右の隙間のみ */
 }
 
-.tag-chip-list {
+.full-width-field {
   width: 100%;
   margin-bottom: 16px;
 }
 
-.evaluation-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.half-width-field {
+  width: calc(50% - 8px); /* 隙間を考慮 */
+  margin-bottom: 16px;
 }
 
-.evaluation-section {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.stars {
-  display: flex;
+/* あなたの評価グリッド */
+.my-evaluation-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px 24px;
   align-items: center;
 }
 
-.stars mat-icon {
-  cursor: pointer;
-  font-size: 36px;
-  color: #ccc;
-  transition: color 0.2s ease-in-out;
-  width: 36px;
-  height: 36px;
-}
+.played-check { grid-column: 1 / -1; }
+.stars { grid-column: 1 / 2; grid-row: 2 / 3; }
+.comment-field { grid-column: 2 / 3; grid-row: 2 / 3; }
 
-.stars mat-icon.filled-star {
-  color: gold;
-}
+.stars mat-icon { cursor: pointer; font-size: 36px; color: #ccc; transition: color 0.2s ease-in-out; width: 36px; height: 36px; }
+.stars mat-icon.filled-star { color: gold; }
 
-.evaluation-guide {
-  margin-top: 15px;
-  padding: 15px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  border: 1px solid #eee;
-}
+/* 評価基準 */
+.evaluation-guide-panel { margin-top: 20px; box-shadow: none; border: 1px solid rgba(0,0,0,.12); }
+.evaluation-guide-panel .mat-expansion-panel-header { padding: 0 16px; }
+.evaluation-guide ul { list-style: none; padding: 0; margin: 0; }
+.evaluation-guide li { margin-bottom: 8px; }
 
-.evaluation-guide p {
-  margin-bottom: 10px;
-  font-weight: bold;
-}
+/* みんなの評価テーブル */
+.all-evaluations-section { overflow-x: auto; }
+.mat-elevation-z2 { box-shadow: 0 2px 4px -1px rgba(0,0,0,.2), 0 4px 5px 0 rgba(0,0,0,.14), 0 1px 10px 0 rgba(0,0,0,.12); }
+.user-photo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.star-display mat-icon { font-size: 20px; width: 20px; height: 20px; color: #ccc; }
+.star-display mat-icon.filled-star { color: gold; }
+.mat-column-comment { white-space: pre-wrap; word-break: break-word; }
 
-.evaluation-guide ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.evaluation-guide li {
-  margin-bottom: 5px;
-}
-
-.all-evaluations-section {
-  margin-top: 24px;
-}
-
-.user-photo {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 10px;
-}
-
-.mat-column-photo {
-  flex: 0 0 50px;
-  padding-left: 0;
-}
-
-.mat-column-name {
-  flex: 1;
-  word-break: keep-all;
-  white-space: nowrap;
-}
-
-.mat-column-evaluation {
-  flex: 0 0 180px;
-  text-align: right;
-}
-
-.mat-column-evaluation mat-icon {
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
-}
-
-.mat-mdc-dialog-container .mat-mdc-dialog-content {
-  padding: 24px;
-}
-
-.mat-mdc-dialog-container .mat-mdc-dialog-actions {
-  padding: 16px 24px;
-  justify-content: flex-end;
-}
-
-mat-divider {
-  margin-top: 24px;
-  margin-bottom: 24px;
-}
-
+/* レスポンシブ対応 */
 @media (max-width: 600px) {
-  .info-grid {
-    grid-template-columns: 1fr;
+  .dialog-content, .dialog-title, .dialog-actions { padding: 16px; }
+  .half-width-field {
+    width: 100%; /* 狭い画面では全幅に */
   }
-
-  .mat-mdc-dialog-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-  }
-
-  .mat-mdc-dialog-container .mat-mdc-dialog-content {
-    padding: 16px;
-  }
-
-  .mat-mdc-dialog-container .mat-mdc-dialog-actions {
-    padding: 8px 16px;
-  }
+  .my-evaluation-grid { grid-template-columns: 1fr; }
+  .stars, .comment-field { grid-column: 1 / -1; }
+  .stars { grid-row: 2 / 3; }
+  .comment-field { grid-row: 3 / 4; }
 }
