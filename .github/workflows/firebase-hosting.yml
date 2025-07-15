@@ -37,6 +37,7 @@ jobs:
             }
           };
           EOF
+          cat src/environments/environment.prod.ts
 
       - name: Build Angular app
         run: |
