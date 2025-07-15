@@ -18,13 +18,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd bg-manager
           npm cache clean --force
           npm ci
 
       - name: Configure Firebase environment
         run: |
-          cd bg-manager
           cat <<EOF > src/environments/environment.prod.ts
           export const environment = {
             production: true,
@@ -42,7 +40,6 @@ jobs:
 
       - name: Build Angular app
         run: |
-          cd bg-manager
           npm run build --configuration=production
 
       - name: Deploy to Firebase
@@ -52,4 +49,3 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BG_MANAGER }}'
           channelId: live
           projectId: bg-manager-cc1fa
-          entryPoint: bg-manager
