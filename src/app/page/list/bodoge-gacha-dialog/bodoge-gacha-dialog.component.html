@@ -28,7 +28,17 @@
         </button>
       </mat-chip-row>
     </mat-chip-grid>
-    <input placeholder="新しいタグ..." [matChipInputFor]="chipGrid" (matChipInputTokenEnd)="addTag($event)"/>
+    <input placeholder="新しいタグ..."
+           #tagInput
+           [formControl]="tagCtrl"
+           [matAutocomplete]="auto"
+           [matChipInputFor]="chipGrid"
+           (matChipInputTokenEnd)="addTag($event)"/>
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
+      <mat-option *ngFor="let tag of filteredTags | async" [value]="tag">
+        {{tag}}
+      </mat-option>
+    </mat-autocomplete>
   </mat-form-field>
 
   <div class="slider-container full-width">

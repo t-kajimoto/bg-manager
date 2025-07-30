@@ -18,7 +18,7 @@ import { AuthService } from '../../services/auth.service';
 import { AddBoardgameDialogComponent } from './add-boardgame-dialog/add-boardgame-dialog.component';
 import { EditUserDataDialogComponent } from './edit-user-data-dialog/edit-user-data-dialog.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { BodogeGachaDialogComponent, GachaCondition } from './bodoge-gacha-dialog/bodoge-gacha-dialog.component';
+import { BodogeGachaDialogComponent, GachaDialogData } from './bodoge-gacha-dialog/bodoge-gacha-dialog.component';
 import { Observable, firstValueFrom, filter } from 'rxjs';
 
 @Component({
@@ -43,10 +43,11 @@ import { Observable, firstValueFrom, filter } from 'rxjs';
 })
 export class ListComponent implements AfterViewInit, OnInit {
   public isAdmin$: Observable<boolean>;
-  displayedColumns: string[] = ['name', 'players', 'time', 'evaluation', 'averageEvaluation', 'actions'];
+  displayedColumns: string[] = ['actions', 'name', 'tags', 'players', 'time', 'evaluation', 'averageEvaluation'];
   dataSource: MatTableDataSource<IBoardGame>;
   maxStars: number = 5;
   maxStarsArray: number[] = Array(this.maxStars).fill(0);
+  allTags: string[] = [];
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
@@ -72,6 +73,9 @@ export class ListComponent implements AfterViewInit, OnInit {
   loadBoardGames() {
     this.boardgameService.getBoardGames().subscribe(data => {
       this.dataSource.data = data;
+      // 全てのタグを収集し、重複を除外する
+      const allTags = data.flatMap(game => game.tags || []);
+      this.allTags = [...new Set(allTags)];
     });
   }
 
@@ -83,7 +87,7 @@ export class ListComponent implements AfterViewInit, OnInit {
   async openGachaDialog(): Promise<void> {
     const dialogRef = this.dialog.open(BodogeGachaDialogComponent, {
       width: '500px',
-      data: { }
+      data: { allTags: this.allTags }
     });
 
     const result = await firstValueFrom(dialogRef.afterClosed());
@@ -92,7 +96,7 @@ export class ListComponent implements AfterViewInit, OnInit {
     }
   }
 
-  private executeGacha(condition: GachaCondition): void {
+  private executeGacha(condition: GachaDialogData): void {
     let candidates = this.dataSource.data;
 
     // 人数で絞り込み
@@ -115,7 +119,7 @@ export class ListComponent implements AfterViewInit, OnInit {
 
     // タグで絞り込み
     if (condition.tags.length > 0) {
-      candidates = candidates.filter(game => game.tags && condition.tags.every(tag => game.tags!.includes(tag)));
+      candidates = candidates.filter(game => game.tags && condition.tags.every((tag: string) => game.tags!.includes(tag)));
     }
 
     // 平均評価で絞り込み
@@ -136,7 +140,14 @@ export class ListComponent implements AfterViewInit, OnInit {
     const user = await firstValueFrom(this.authService.user$.pipe(filter(u => !!u)));
     const dialogRef = this.dialog.open(AddBoardgameDialogComponent, {
       width: '400px',
-      data: { name: '', min: 0, max: 0, time: 0, ownerName: user?.displayName || 'Unknown' },
+      data: { 
+        name: '', 
+        min: 0, 
+        max: 0, 
+        time: 0, 
+        ownerName: user?.displayName || 'Unknown',
+        allTags: this.allTags
+      },
     });
 
     const result = await firstValueFrom(dialogRef.afterClosed());
@@ -154,7 +165,7 @@ export class ListComponent implements AfterViewInit, OnInit {
     const isAdmin = await firstValueFrom(this.isAdmin$);
     const dialogRef = this.dialog.open(EditUserDataDialogComponent, {
       width: '800px',
-      data: { ...game, isAdmin },
+      data: { ...game, isAdmin, allTags: this.allTags },
       viewContainerRef: this.viewContainerRef,
       injector: this.viewContainerRef.injector,
     });

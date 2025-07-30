@@ -20,9 +20,10 @@
 
 .table-container {
   border-radius: var(--border-radius);
-  overflow: hidden; // 角丸を有効にするため
+  overflow: auto; // 縦横のスクロールを有効にする
   background-color: var(--surface-color);
-  overflow-x: auto; /* スマホ表示で横スクロールを有効に */
+  // ビューポートの高さから、ヘッダーやフォームなどの他の要素の高さを引いた値を設定
+  max-height: calc(100vh - 250px); 
 }
 
 .mat-mdc-table {
@@ -58,6 +59,10 @@
   font-weight: 500;
 }
 
+.star-cell {
+  white-space: nowrap; /* 星が改行されないようにする */
+}
+
 .star-cell .mat-icon {
   font-size: 20px;
   width: 20px;
@@ -65,8 +70,13 @@
 }
 
 .custom-chip {
-  background-color: var(--secondary-color) !important;
+  background-color: var(--accent-color) !important;
   color: #fff !important;
+  transition: background-color var(--transition-speed);
+}
+
+.custom-chip:hover {
+  background-color: var(--accent-color-hover) !important;
 }
 
 @media (max-width: 768px) {

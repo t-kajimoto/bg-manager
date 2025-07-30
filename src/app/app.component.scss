@@ -3,6 +3,9 @@
 }
 
 .app-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000; // 他の要素より手前に表示
   background-color: var(--surface-color);
   color: var(--primary-color);
   box-shadow: var(--box-shadow);
