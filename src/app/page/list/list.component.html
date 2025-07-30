@@ -4,9 +4,12 @@
     <mat-card-content class="filter-card-content">
       <mat-form-field appearance="outline" class="filter-input">
         <mat-label>ゲームを検索...</mat-label>
-        <input matInput (keyup)="applyFilter($event)" placeholder="タイトル、タグなど">
+        <input matInput (keyup)="applyFilter($event)" placeholder="タイトル、タグなど" #searchInput>
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
+      <button mat-icon-button color="secondary" (click)="openGachaDialog()" matTooltip="ボドゲガチャ">
+        <mat-icon>casino</mat-icon>
+      </button>
       <button mat-flat-button color="primary" (click)="openAddBoardGameDialog()" *ngIf="isAdmin$ | async">
         <mat-icon>add</mat-icon>
         <span>新しいゲームを追加</span>

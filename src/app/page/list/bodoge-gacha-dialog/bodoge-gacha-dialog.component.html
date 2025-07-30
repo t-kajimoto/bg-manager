@@ -1,0 +1,54 @@
+<h1 mat-dialog-title>ボドゲガチャ</h1>
+<div mat-dialog-content class="dialog-container">
+  <p>条件を指定して、あなたにぴったりのボードゲームを見つけよう！</p>
+
+  <div class="form-row">
+    <mat-form-field class="flex-item">
+      <mat-label>プレイ人数</mat-label>
+      <input matInput type="number" [(ngModel)]="data.players" placeholder="何人で遊びますか？" required>
+    </mat-form-field>
+
+    <mat-radio-group class="flex-item" aria-labelledby="play-status-radio-group-label" [(ngModel)]="data.playStatus">
+      <label id="play-status-radio-group-label">プレイ状況</label>
+      <div class="radio-buttons">
+        <mat-radio-button value="any">指定なし</mat-radio-button>
+        <mat-radio-button value="played">プレイ済み</mat-radio-button>
+        <mat-radio-button value="unplayed">未プレイ</mat-radio-button>
+      </div>
+    </mat-radio-group>
+  </div>
+
+  <mat-form-field class="full-width">
+    <mat-label>タグ</mat-label>
+    <mat-chip-grid #chipGrid aria-label="タグを入力">
+      <mat-chip-row *ngFor="let tag of data.tags" (removed)="removeTag(tag)">
+        {{tag}}
+        <button matChipRemove [attr.aria-label]="'remove ' + tag">
+          <mat-icon>cancel</mat-icon>
+        </button>
+      </mat-chip-row>
+    </mat-chip-grid>
+    <input placeholder="新しいタグ..." [matChipInputFor]="chipGrid" (matChipInputTokenEnd)="addTag($event)"/>
+  </mat-form-field>
+
+  <div class="slider-container full-width">
+    <label>プレイ時間: {{data.timeRange.min}}分 - {{data.timeRange.max === 180 ? '180+' : data.timeRange.max}}分</label>
+    <mat-slider min="0" max="180" step="5">
+      <input matSliderStartThumb [(ngModel)]="data.timeRange.min">
+      <input matSliderEndThumb [(ngModel)]="data.timeRange.max">
+    </mat-slider>
+  </div>
+
+  <div class="slider-container full-width">
+    <label>平均評価: {{data.ratingRange.min | number:'1.1-1'}} - {{data.ratingRange.max | number:'1.1-1'}}</label>
+    <mat-slider min="0" max="5" step="0.1">
+      <input matSliderStartThumb [(ngModel)]="data.ratingRange.min">
+      <input matSliderEndThumb [(ngModel)]="data.ratingRange.max">
+    </mat-slider>
+  </div>
+
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="onNoClick()">キャンセル</button>
+  <button mat-flat-button color="primary" [mat-dialog-close]="data" [disabled]="!data.players">ガチャ実行</button>
+</div>
