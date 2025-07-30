@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { EditNicknameDialogComponent } from './edit-nickname-dialog.component';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('EditNicknameDialogComponent', () => {
   let component: EditNicknameDialogComponent;
@@ -8,7 +9,14 @@ describe('EditNicknameDialogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [EditNicknameDialogComponent]
+      imports: [
+        EditNicknameDialogComponent,
+        NoopAnimationsModule
+      ],
+      providers: [
+        { provide: MatDialogRef, useValue: {} },
+        { provide: MAT_DIALOG_DATA, useValue: {} }
+      ]
     })
     .compileComponents();
 
