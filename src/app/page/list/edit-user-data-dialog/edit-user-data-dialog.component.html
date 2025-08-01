@@ -64,7 +64,7 @@
       <h2 class="section-title">あなたの評価</h2>
       <div class="my-evaluation-grid">
         <div class="played-check">
-          <mat-checkbox [(ngModel)]="data.played">プレイ済み</mat-checkbox>
+          <mat-checkbox class="played-checkbox" [(ngModel)]="data.played">プレイ済み</mat-checkbox>
         </div>
         <div class="stars">
           <mat-icon *ngFor="let star of maxStarsArray; let i = index" (click)="setRating(i + 1)" [ngClass]="{'filled-star': getStarIcon(data.evaluation, i) !== 'star_border'}">{{ getStarIcon(data.evaluation, i) }}</mat-icon>
@@ -134,7 +134,9 @@
   </div>
 
   <div mat-dialog-actions class="dialog-actions">
-    <button mat-stroked-button (click)="onNoClick()">キャンセル</button>
-    <button mat-flat-button color="primary" [mat-dialog-close]="data" cdkFocusInitial>保存</button>
+    <button mat-button color="warn" *ngIf="initialData.isAdmin" (click)="onDeleteClick()">削除</button>
+    <span class="flex-spacer"></span>
+    <button mat-button (click)="onNoClick()">キャンセル</button>
+    <button mat-flat-button color="primary" [mat-dialog-close]="data">保存</button>
   </div>
 </div>

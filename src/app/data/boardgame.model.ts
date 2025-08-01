@@ -81,3 +81,14 @@ export interface IBoardGame extends IBoardGameData, IBoardGameUser {
   /** 参加しているユーザーのうち、誰か一人でもこのゲームをプレイしたことがあるかを示すフラグ */
   anyPlayed?: boolean;
 }
+
+/**
+ * ユーザーデータ編集ダイアログに渡すためのデータモデルです。
+ * IBoardGameを拡張し、追加のプロパティを定義します。
+ */
+export interface EditUserDataDialogData extends IBoardGame {
+  /** ユーザーが管理者権限を持っているかどうか */
+  isAdmin: boolean;
+  /** 存在するすべてのタグのリスト */
+  allTags?: string[];
+}

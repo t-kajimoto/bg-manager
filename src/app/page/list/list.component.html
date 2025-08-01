@@ -4,8 +4,11 @@
     <mat-card-content class="filter-card-content">
       <mat-form-field appearance="outline" class="filter-input">
         <mat-label>ゲームを検索...</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
         <input matInput (keyup)="applyFilter($event)" placeholder="タイトル、タグなど" #searchInput>
-        <mat-icon matSuffix>search</mat-icon>
+        <button mat-icon-button matSuffix *ngIf="searchInput.value" (click)="clearSearch()">
+          <mat-icon>close</mat-icon>
+        </button>
       </mat-form-field>
       <button mat-icon-button color="secondary" (click)="openGachaDialog()" matTooltip="ボドゲガチャ">
         <mat-icon>casino</mat-icon>
@@ -38,14 +41,14 @@
         <th mat-header-cell *matHeaderCellDef>タグ</th>
         <td mat-cell *matCellDef="let element">
           <mat-chip-listbox>
-            <mat-chip *ngFor="let tag of element.tags" class="custom-chip">{{tag}}</mat-chip>
+            <mat-chip *ngFor="let tag of element.tags" class="app-chip" (click)="onTagClick(tag)" [style.cursor]="'pointer'">{{tag}}</mat-chip>
           </mat-chip-listbox>
         </td>
       </ng-container>
 
       <!-- Players Column -->
       <ng-container matColumnDef="players">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>プレイ人数</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>人数</th>
         <td mat-cell *matCellDef="let element">{{ element.min }} - {{ element.max }}人</td>
       </ng-container>
 

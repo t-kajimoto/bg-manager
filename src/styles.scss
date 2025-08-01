@@ -115,11 +115,6 @@ body {
   color: #fff;
 }
 
-.mat-mdc-checkbox .mdc-checkbox__native-control:enabled:checked~.mdc-checkbox__background {
-  background-color: var(--accent-color) !important;
-  border-color: var(--accent-color) !important;
-}
-
 .mat-mdc-form-field-focus-overlay {
   background-color: var(--primary-color) !important;
 }

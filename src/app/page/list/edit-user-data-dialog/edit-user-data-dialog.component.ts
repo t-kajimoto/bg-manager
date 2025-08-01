@@ -1,7 +1,8 @@
 import { Component, ElementRef, ViewChild, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { IBoardGame } from '../../../data/boardgame.model';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { IBoardGame, EditUserDataDialogData } from '../../../data/boardgame.model';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -15,12 +16,7 @@ import { MatChipsModule, MatChipInputEvent } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { Observable, startWith, map } from 'rxjs';
-
-export interface EditUserDataDialogData extends IBoardGame {
-  isAdmin: boolean;
-  allTags?: string[];
-}
+import { Observable, startWith, map, firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-edit-user-data-dialog',
@@ -49,7 +45,8 @@ export class EditUserDataDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<EditUserDataDialogComponent>,
-    private boardgameService: BoardgameService
+    private boardgameService: BoardgameService,
+    public dialog: MatDialog
   ) {
     this.data = { ...this.initialData };
     this.allTags = this.initialData.allTags || [];
@@ -76,6 +73,22 @@ export class EditUserDataDialogComponent implements OnInit {
 
   onNoClick(): void {
     this.dialogRef.close();
+  }
+
+  /**
+   * 削除ボタンがクリックされたときに呼び出されます。
+   * 確認ダイアログを表示し、承認された場合にのみ削除処理を実行します。
+   */
+  async onDeleteClick(): Promise<void> {
+    const confirmDialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: { message: `「${this.data.name}」を削除してもよろしいですか？関連するすべての評価データも削除されます。` }
+    });
+
+    const result = await firstValueFrom(confirmDialogRef.afterClosed());
+    if (result) {
+      await this.boardgameService.deleteBoardGame(this.data.id!);
+      this.dialogRef.close('deleted'); // 削除が完了したことを呼び出し元に通知
+    }
   }
 
   setRating(rating: number): void {

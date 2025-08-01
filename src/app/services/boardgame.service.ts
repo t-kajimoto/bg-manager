@@ -6,7 +6,7 @@
  */
 
 import { Injectable } from '@angular/core';
-import { Firestore, collection, collectionData, addDoc, doc, setDoc, where, query, DocumentData, DocumentReference, getDocs, getDoc } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, addDoc, doc, setDoc, where, query, DocumentData, DocumentReference, getDocs, getDoc, deleteDoc } from '@angular/fire/firestore';
 import { Observable, from, combineLatest, switchMap, map, filter, firstValueFrom } from 'rxjs';
 import { IBoardGame, IBoardGameData, IBoardGameUser, IBoardGameUserFirestore } from '../data/boardgame.model';
 import { AuthService } from './auth.service';
@@ -195,6 +195,28 @@ export class BoardgameService {
     };
     // `merge: true`で、ドキュメントの他のフィールドを壊さずに更新します。
     return setDoc(userGameDocRef, dataToSet, { merge: true });
+  }
+
+  /**
+   * 指定されたボードゲームを削除します。
+   * これには、`boardGames`コレクションの本体と、`userBoardGames`コレクションにあるすべての関連ドキュメントが含まれます。
+   * @param {string} gameId - 削除するボードゲームのID。
+   * @returns {Promise<void>} 削除処理の完了を示すPromise。
+   */
+  async deleteBoardGame(gameId: string): Promise<void> {
+    // 1. `boardGames`コレクションから本体を削除
+    const gameDocRef = doc(this.firestore, `boardGames/${gameId}`);
+    const deleteGamePromise = deleteDoc(gameDocRef);
+
+    // 2. `userBoardGames`コレクションから関連データをすべて検索
+    const userGamesQuery = query(collection(this.firestore, 'userBoardGames'), where('boardGameId', '==', gameId));
+    const userGamesSnapshot = await getDocs(userGamesQuery);
+
+    // 3. 関連するすべての`userBoardGames`ドキュメントを削除
+    const deleteUserGamesPromises = userGamesSnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
+
+    // 4. すべての削除処理が完了するのを待つ
+    await Promise.all([deleteGamePromise, ...deleteUserGamesPromises]);
   }
 }
 

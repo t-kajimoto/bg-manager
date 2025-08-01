@@ -203,4 +203,14 @@ export class ListComponent implements AfterViewInit, OnInit {
     if (rating >= index + 0.5) return 'star_half';
     return 'star_border';
   }
+
+  public onTagClick(tag: string): void {
+    this.searchInput.nativeElement.value = tag;
+    this.dataSource.filter = tag.trim().toLowerCase();
+  }
+
+  public clearSearch(): void {
+    this.searchInput.nativeElement.value = '';
+    this.dataSource.filter = '';
+  }
 }
