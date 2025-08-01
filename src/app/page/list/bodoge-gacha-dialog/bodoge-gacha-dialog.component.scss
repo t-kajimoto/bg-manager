@@ -47,6 +47,6 @@ mat-radio-group {
 
   mat-slider {
     // スライダーがコンテナの幅を超えないように調整
-    width: calc(100% - 2px); // 左右のボーダー分を考慮
+    width: calc(100% - 10px); // 左右のボーダー分を考慮
   }
 }
