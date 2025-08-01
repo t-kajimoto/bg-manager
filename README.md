@@ -1,135 +1,149 @@
-# ボードゲーム管理アプリ (bg-manager)
+# HARIDICE - ボードゲーム管理アプリ
 
-このプロジェクトは、個人またはグループで所有するボードゲームを管理するためのWebアプリケーションです。
-AngularとFirebaseを主軸技術として開発されており、直感的なUIでボードゲームの追加、一覧表示、編集、削除といった基本的な操作を行えます。
+[![Deploy to Firebase Hosting](https://github.com/t-kajimoto/bg-manager/actions/workflows/firebase-hosting.yml/badge.svg)](https://github.com/t-kajimoto/bg-manager/actions)
 
-## 主な機能
+HARIDICEは、あなたが持っているボードゲームを簡単に記録・管理・評価できるWebアプリケーションです。友人やサークル仲間とボードゲームのリストを共有し、「次は何で遊ぶ？」をもっと楽しくします。
 
-- **ボードゲームの登録:**
-  - ゲームのタイトル、所有者、プレイ人数（最小・最大）、プレイ時間（最小・最大）などの詳細情報を登録できます。
-- **ボードゲーム一覧表示:**
-  - 登録されたボードゲームを一覧で確認できます。
-  - 各ゲームの詳細情報（所有者、プレイ人数、プレイ時間など）も表示されます。
-- **ゲーム情報の編集と削除:**
-  - 登録済みのゲーム情報をいつでも更新できます。
-  - 不要になったゲーム情報を削除する機能も備わっています。
-- **ユーザー管理:**
-  - ユーザーのニックネーム編集機能があります。
+![アプリのスクリーンショット](public/screen-shotpng.png) 
 
-## 使用技術
+## ✨ 主要機能
 
-本プロジェクトで利用している主要な技術スタックは以下の通りです。
+-   **ボードゲームリスト**: 所有するボードゲームを一覧で表示。プレイ人数や時間、タグで絞り込み・ソートが可能。
+-   **評価とコメント**: ゲームごとに5段階評価とコメントを記録し、みんなの評価を閲覧できます。
+-   **プレイ状況の管理**: 「プレイ済み」「未プレイ」を簡単に管理できます。
+-   **ボドゲガチャ**: 条件を指定して、遊ぶゲームをランダムに選出します。
+-   **Google認証**: 面倒な会員登録は不要。お持ちのGoogleアカウントですぐに利用を開始できます。
+-   **管理者機能**: 管理者として指定されたユーザーは、ボードゲームの追加・編集・削除が可能です。
 
-- **フロントエンド:**
-  - [Angular](https://angular.io/): Googleが開発したTypeScriptベースのWebアプリケーションフレームワーク。
-  - [Angular Material](https://material.angular.io/): 高品質なUIコンポーネントライブラリ。
-- **バックエンド & データベース:**
-  - [Firebase](https://firebase.google.com/):
-    - **Authentication:** ユーザー認証機能を提供。
-    - **Firestore:** NoSQLデータベースとして、ボードゲームのデータやユーザー情報を格納。
-    - **Hosting:** アプリケーションのデプロイ先として利用。
-- **開発ツール:**
-  - [Node.js](https://nodejs.org/): JavaScriptの実行環境。
-  - [TypeScript](https://www.typescriptlang.org/): JavaScriptに静的型付けを追加した言語。
-  - [Angular CLI](https://angular.io/cli): Angularプロジェクトの管理を効率化するコマンドラインインターフェース。
+## 🛠️ 技術スタック
 
-## ディレクトリ構成
+このアプリケーションは、モダンなWeb技術を用いて構築されています。
 
-プロジェクトの主要なディレクトリとファイル構成です。
+-   **フロントエンド**: [Angular](https://angular.io/) (v19+), [TypeScript](https://www.typescriptlang.org/)
+-   **UIライブラリ**: [Angular Material](https://material.angular.io/)
+-   **バックエンド (BaaS)**: [Firebase](https://firebase.google.com/)
+    -   **データベース**: Cloud Firestore (NoSQL)
+    -   **認証**: Firebase Authentication (Googleログイン)
+    -   **ホスティング**: Firebase Hosting
+-   **CI/CD**: [GitHub Actions](https://github.co.jp/features/actions)
 
-```
-bg-manager/
-├── src/
-│   ├── app/
-│   │   ├── page/
-│   │   │   └── list/               # ボードゲーム一覧ページ関連
-│   │   ├── data/
-│   │   │   └── boardgame.model.ts  # ボードゲームのデータモデル
-│   │   └── services/
-│   │       ├── auth.service.ts     # 認証関連サービス
-│   │       └── boardgame.service.ts # ボードゲームデータ操作サービス
-│   ├── environments/               # 環境変数設定ファイル
-│   ├── index.html                  # アプリケーションの起点となるHTML
-│   ├── main.ts                     # Angularアプリケーションの起動ファイル
-│   └── styles.scss                 # グローバルなスタイルシート
-├── firebase.json                   # Firebaseの各種設定
-├── angular.json                    # Angularプロジェクトの設定ファイル
-└── package.json                    # プロジェクトの依存関係とスクリプト定義
-```
+## 🚀 あなたの環境へのデプロイ手順
 
-## セットアップと実行方法
+このリポジトリをフォークし、あなた自身のFirebase環境にHARIDICEをデプロイする手順を説明します。
 
-1.  **リポジトリのクローン:**
+### Step 1: 前提条件
+
+-   [Node.js](https://nodejs.org/) (v18以上) がインストールされていること。
+-   [Googleアカウント](https://www.google.com/account/about/)を持っていること。
+-   [Git](https://git-scm.com/)がインストールされていること。
+
+### Step 2: プロジェクトのセットアップ
+
+1.  **このリポジトリをフォーク & クローン**
     ```bash
-    git clone https://github.com/your-username/bg-manager.git
+    git clone https://github.com/t-kajimoto/bg-manager.git
     cd bg-manager
     ```
 
-2.  **依存関係のインストール:**
+2.  **依存関係をインストール**
     ```bash
     npm install
     ```
 
-3.  **開発サーバーの起動:**
+### Step 3: Firebaseプロジェクトの作成と設定
+
+1.  **Firebaseプロジェクトを作成**
+    -   [Firebaseコンソール](https://console.firebase.google.com/)にアクセスし、「プロジェクトを追加」から新しいプロジェクトを作成します（例: `my-haridice`）。
+
+2.  **ウェブアプリを追加**
+    -   プロジェクトの概要ページで、ウェブアイコン (`</>`) をクリックして新しいウェブアプリを追加します。
+    -   アプリのニックネームを登録すると、`firebaseConfig`オブジェクトが表示されます。この内容は後で使います。
+
+3.  **認証方法を有効化**
+    -   左側のメニューから「Authentication」を選択し、「Sign-in method」タブを開きます。
+    -   プロバイダの一覧から「Google」を選択し、有効にして保存します。
+
+4.  **Firestore Databaseを作成**
+    -   左側のメニューから「Firestore Database」を選択し、「データベースの作成」をクリックします。
+    -   **テストモード**で開始し、ロケーションを選択して「有効にする」をクリックします。（セキュリティルールは後で設定します）
+
+### Step 4: ローカル環境とFirebaseを接続
+
+1.  **Firebase CLIをインストール**
+    ```bash
+    npm install -g firebase-tools
+    ```
+
+2.  **Firebaseにログイン**
+    ```bash
+    firebase login
+    ```
+    ブラウザが開き、Googleアカウントでの認証を求められます。
+
+3.  **ローカルプロジェクトとFirebaseプロジェクトを紐付け**
+    -   `.firebaserc` ファイルを開き、`default`の値をあなた自身のFirebaseプロジェクトIDに書き換えます。
+        ```json
+        // .firebaserc
+        {
+          "projects": {
+            "default": "YOUR-FIREBASE-PROJECT-ID"
+          }
+        }
+        ```
+
+4.  **環境変数を設定**
+    -   `src/environments/environment.ts` ファイルを開きます。
+    -   Step 3-2で表示された`firebaseConfig`オブジェクトの内容をコピー＆ペーストします。
+        ```typescript
+        // src/environments/environment.ts
+        export const environment = {
+          production: false,
+          firebase: {
+            apiKey: "...",
+            authDomain: "...",
+            projectId: "...",
+            storageBucket: "...",
+            messagingSenderId: "...",
+            appId: "..."
+          }
+        };
+        ```
+
+### Step 5: 管理者の設定とデプロイ
+
+1.  **あなたを管理者に設定**
+    -   `firestore.rules` ファイルを開きます。
+    -   `YOUR_UID_HERE`と書かれている部分を、あなたのFirebase AuthenticationのUIDに置き換えます。（UIDは、一度アプリを起動してGoogleログインすると、FirebaseコンソールのAuthentication > Usersタブで確認できます）
+        ```
+        // firestore.rules
+        allow write: if request.auth != null && request.auth.uid == 'YOUR_UID_HERE';
+        ```
+
+2.  **ローカルで動作確認**
     ```bash
     ng serve
     ```
-    ブラウザで `http://localhost:4200/` にアクセスすると、アプリケーションが表示されます。
+    `http://localhost:4200` にアクセスし、Googleログインやボードゲームの追加ができることを確認します。
 
-## ビルドとデプロイ
+3.  **Firebaseにデプロイ！**
+    ```bash
+    # まずはアプリを本番用にビルド
+    ng build
 
-- **ビルド:**
-  プロジェクトをビルドするには、以下のコマンドを実行します。
-  ```bash
-  ng build
-  ```
-  ビルド成果物は `dist/bg-manager/` ディレクトリに出力されます。
+    # Firestoreのルールとホスティングをデプロイ
+    firebase deploy
+    ```
 
-- **デプロイ:**
-  このプロジェクトはFirebase Hostingにデプロイされるように設定されています。
-  `.github/workflows/firebase-hosting.yml` に、mainブランチへのプッシュをトリガーとして自動でデプロイが実行されるGitHub Actionsのワークフローが定義されています。
+これで、あなた自身の環境でHARIDICEが動作します！
 
-## 画面・ダイアログごとの操作とデータフロー
+## 📄 設計ドキュメント
 
-### 1. ボードゲーム一覧画面 (`ListComponent`)
+このアプリケーションのより詳細な設計や仕様については、`/document` フォルダ内の設計書を参照してください。
 
-この画面はアプリケーションのメイン画面です。
+-   [**アプリケーション総合設計書**](./document/application-design-document.md)
+-   [**データベース設計書**](./document/database-design-document.md)
+-   [**各画面・機能ごとの詳細設計書**](./document/)
 
-| ユーザー操作 | イベント/トリガー | データ・状態の変更 |
-| :--- | :--- | :--- |
-| **画面初期表示** | `ngOnInit` | `BoardgameService.getBoardGames()` を呼び出し、Firestoreから全ボードゲームとユーザーのプレイ状況を取得してテーブルに表示。 |
-| **フィルター入力** | `(keyup)` イベント | `applyFilter()` が実行され、`MatTableDataSource` の `filter` プロパティが更新されることで、表示されるゲームがリアルタイムに絞り込まれる。 |
-| **列名クリック** | `(click)` イベント | `MatSort` がテーブルのデータをソートして再描画する。 |
-| **「追加」ボタンクリック** | `(click)` イベント | `openAddBoardGameDialog()` を呼び出し、「ボードゲームを追加」ダイアログを開く。 |
-| **「編集」ボタンクリック** | `(click)` イベント | `openEditUserDataDialog()` を呼び出し、「評価・プレイ状況を編集」ダイアログを開く。 |
-| **ゲーム名クリック** | `(click)` イベント | `openGoogleImageSearch()` が実行され、Google画像検索の新しいタブが開く。 |
+---
 
-### 2. ボードゲームを追加ダイアログ (`AddBoardgameDialogComponent`)
-
-新しいボードゲームを登録するためのダイアログです。
-
-| ユーザー操作 | イベント/トリガー | データ・状態の変更 |
-| :--- | :--- | :--- |
-| **各項目入力** | `[(ngModel)]` | コンポーネント内の `data` オブジェクトが更新される。 |
-| **「保存」ボタンクリック** | ダイアログが閉じる | `dialog.afterClosed()` が解決され、入力された `data` を返す。`ListComponent` はそのデータを受け取り、`BoardgameService.addBoardGame()` を使ってFirestoreの `boardGames` コレクションに新しいドキュメントを追加する。 |
-| **「キャンセル」ボタンクリック** | `(click)` イベント | `onNoClick()` がダイアログを閉じ、何も変更は行われない。 |
-
-### 3. 評価・プレイ状況を編集ダイアログ (`EditUserDataDialogComponent`)
-
-既存のボードゲームに対する個人の評価やプレイ状況、および（管理者権限がある場合は）ゲーム自体の情報を編集します。
-
-| ユーザー操作 | イベント/トリガー | データ・状態の変更 |
-| :--- | :--- | :--- |
-| **各項目編集** | `[(ngModel)]` | コンポーネント内の `data` オブジェクトが更新される。 |
-| **評価の星クリック** | `(click)` イベント | `setRating()` が `data.evaluation` の値を更新する。 |
-| **「保存」ボタンクリック** | ダイアログが閉じる | `dialog.afterClosed()` が解決され、編集された `data` を返す。`ListComponent` は **オプティミスティックUI** を採用しており、まずローカルの表示を即時更新し、その後バックグラウンドで `BoardgameService` の `updateUserBoardGame()` と `updateBoardGame()` (管理者のみ) を呼び出してFirestoreのデータを更新する。 |
-| **「キャンセル」ボタンクリック** | `(click)` イベント | `onNoClick()` がダイアログを閉じ、何も変更は行われない。 |
-
-### 4. ニックネームを編集ダイアログ (`EditNicknameDialogComponent`)
-
-ユーザー自身のニックネームを変更するためのダイアログです。（※現在の実装では、このダイアログを呼び出す機能はUI上にまだありませんが、コンポーネントとしては存在します）
-
-| ユーザー操作 | イベント/トリガー | データ・状態の変更 |
-| :--- | :--- | :--- |
-| **ニックネーム入力** | `[(ngModel)]` | コンポーネント内の `data.nickname` が更新される。 |
-| **「保存」ボタンクリック** | ダイアログが閉じる | `dialog.afterClosed()` が解決され、入力されたニックネームを返す。呼び出し元のコンポーネントが `AuthService` などを通じてFirestoreの `users` コレクションにある該当ユーザーの `nickname` フィールドを更新することが想定される。 |
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.6.
