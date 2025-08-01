@@ -86,6 +86,31 @@
   gap: 16px;
 }
 
+.help-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 48px 24px;
+}
+
+.help-card {
+  max-width: 600px;
+  width: 100%;
+}
+
+.help-card mat-card-content ol {
+  padding-left: 20px;
+}
+
+.help-card mat-card-content li {
+  margin-bottom: 12px;
+}
+
+.help-card mat-icon {
+  vertical-align: middle;
+  margin: 0 4px;
+}
+
 @media (max-width: 768px) {
   .list-container {
     padding: 16px;
@@ -97,5 +122,9 @@
 
   .search-container {
     width: 100%;
+  }
+
+  .help-container {
+    padding: 24px 16px;
   }
 }

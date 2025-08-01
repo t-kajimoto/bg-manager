@@ -1,4 +1,4 @@
-<div class="list-container">
+<div class="list-container" *ngIf="user$ | async as user; else showHelp">
 
   <mat-card class="filter-card">
     <mat-card-content class="filter-card-content">
@@ -99,3 +99,28 @@
     </table>
   </div>
 </div>
+
+<ng-template #showHelp>
+  <div class="help-container">
+    <mat-card class="help-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>help_outline</mat-icon>
+        <mat-card-title>HARIDICEへようこそ！</mat-card-title>
+        <mat-card-subtitle>基本的な使い方</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>
+          このアプリを最大限に活用するには、Googleアカウントでのログインが必要です。
+        </p>
+        <ol>
+          <li><strong>ログイン</strong>: 画面右上の「ログイン」ボタンから、お持ちのGoogleアカウントでログインしてください。</li>
+          <li><strong>ニックネーム設定</strong>: ログイン後、右上のアカウントメニューに表示される<mat-icon>edit</mat-icon>ボタンから、アプリ内で使用するニックネームを自由に変更できます。</li>
+        </ol>
+        <p>
+          ログインすると、ボードゲームの評価を記録したり、他の人の評価を見たりすることができるようになります。
+        </p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</ng-template>
+

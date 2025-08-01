@@ -19,6 +19,7 @@ import { AddBoardgameDialogComponent } from './add-boardgame-dialog/add-boardgam
 import { EditUserDataDialogComponent } from './edit-user-data-dialog/edit-user-data-dialog.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BodogeGachaDialogComponent, GachaDialogData } from './bodoge-gacha-dialog/bodoge-gacha-dialog.component';
+import { User } from '@angular/fire/auth';
 import { Observable, firstValueFrom, filter } from 'rxjs';
 
 @Component({
@@ -42,6 +43,7 @@ import { Observable, firstValueFrom, filter } from 'rxjs';
   styleUrl: './list.component.scss',
 })
 export class ListComponent implements AfterViewInit, OnInit {
+  public user$: Observable<User | null>;
   public isAdmin$: Observable<boolean>;
   displayedColumns: string[] = ['actions', 'name', 'tags', 'players', 'time', 'evaluation', 'averageEvaluation'];
   dataSource: MatTableDataSource<IBoardGame>;
@@ -59,6 +61,7 @@ export class ListComponent implements AfterViewInit, OnInit {
     private snackBar: MatSnackBar
   ) {
     this.dataSource = new MatTableDataSource<IBoardGame>([]);
+    this.user$ = this.authService.user$;
     this.isAdmin$ = this.authService.isAdmin$;
   }
 
