@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ボードゲーム本体の情報を格納するコレクション (boardGames)
+    match /boardGames/{boardGameId} {
+      // 読み取り: ログインしていれば誰でも可能
+      allow read: if request.auth != null;
+
+      // 書き込み(作成/更新/削除): 管理者(あなたのUID)のみ可能
+      // 'YOUR_UID_HERE' をご自身のFirebase AuthenticationのUIDに置き換えてください
+      allow write: if request.auth != null && request.auth.uid == 'nsPr7XWcyhhJMi9ipeS6GoU5g9A2';
+    }
+
+    // ユーザーごとのプレイ状況や評価を格納するコレクション (userBoardGames)
+    match /userBoardGames/{userGameId} {
+      // 読み取り: ログインしていれば誰でも可能 (平均評価の計算などに必要です)
+      allow read: if request.auth != null;
+
+      // 書き込み(作成/更新):
+      // これから書き込むデータ(request.resource.data)に含まれるuserIdが、
+      // 操作しているユーザー自身のUID(request.auth.uid)と一致する場合のみ許可します。
+      // これにより、ユーザーは自分の評価データしか変更できなくなります。
+      allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ユーザー情報を格納するコレクション (users)
+    match /users/{userId} {
+      // 読み取りはログインしていれば誰でも可能
+      allow read: if request.auth != null;
+      // 書き込みは本人のみ
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

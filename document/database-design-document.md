@@ -141,10 +141,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ユーザーは自身のユーザー情報のみ編集可能。他人の情報は読み取り専用。
+    // ユーザーは自身のユーザー情報のみ更新可能。他人の情報は読み取り専用。
     match /users/{userId} {
       allow read: if request.auth != null;
       allow update: if request.auth.uid == userId;
+      allow create, delete: if false; // 作成と削除は許可しない
     }
 
     // 認証済みユーザーはボードゲーム情報を読み取り可能。

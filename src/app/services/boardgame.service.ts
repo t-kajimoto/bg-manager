@@ -61,6 +61,7 @@ export class BoardgameService {
       const userId = data['userId'];
       const userProfile = await this.getUserProfile(userId);
       return {
+        userId: userId,
         userName: userProfile?.nickname ?? 'Unknown User',
         userPhotoUrl: userProfile?.photoURL ?? 'assets/default-user.png',
         evaluation: data['evaluation'],
