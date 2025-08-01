@@ -1,10 +1,9 @@
-
 # ニックネーム編集ダイアログ 設計書 (`edit-nickname-dialog.md`)
 
 ## 1. 概要
 
 このダイアログは、ユーザーが自身のニックネームを変更するためのシンプルなUIを提供します。
-アプリケーションヘッダーのユーザー情報エリアにある編集ボタン (`mat-icon > edit`) によって `AppComponent` から呼び出されることを想定しています。（※現在の実装では `ListComponent` にボタンがありますが、UI/UXの観点から `AppComponent` に配置するのが一般的です）
+アプリケーションヘッダーのユーザーメニュー内にある「ニックネームを編集」ボタンによって `AppComponent` から呼び出されます。
 
 ## 2. ファイル構成
 
@@ -12,48 +11,74 @@
 -   **Template**: `src/app/page/list/edit-nickname-dialog/edit-nickname-dialog.component.html`
 -   **Style**: `src/app/page/list/edit-nickname-dialog/edit-nickname-dialog.component.scss`
 
-## 3. UI要素とレイアウト
+## 3. UIレイアウト図
 
--   **ダイアログタイトル (`mat-dialog-title`)**: 「ニックネームを編集」
--   **入力フォーム (`mat-dialog-content`)**:
-    -   **ニックネーム (`mat-form-field`)**: 新しいニックネームを入力するためのテキストフィールドです。
-        -   `[(ngModel)]="data.nickname"`
--   **アクションボタン (`mat-dialog-actions`)**:
-    -   **キャンセルボタン (`mat-button`)**: `(click)="onNoClick()"`。ダイアログを閉じ、変更を破棄します。
-    -   **保存ボタン (`mat-button`)**: `[mat-dialog-close]="data.nickname"`。入力されたニックネームの文字列をダイアログの呼び出し元に返します。
+```mermaid
+graph TD
+    subgraph "ダイアログ (mat-dialog-container)"
+        A["タイトル: ニックネームを編集 (mat-dialog-title)"]
+        subgraph "フォーム (mat-dialog-content)"
+            B["ニックネーム (mat-form-field)"]
+        end
+        subgraph "アクションボタン (mat-dialog-actions)"
+            C["キャンセル (button)"] -- "align: end" --> D["保存 (button, color: primary)"]
+        end
+        A --> B --> C
+    end
+```
 
 ## 4. コンポーネント仕様 (`EditNicknameDialogComponent`)
 
-### 4.1. クラスデコレーター
+### 4.1. データモデル
 
--   `@Component`: `standalone: true` であり、必要なモジュールを `imports` 配列で直接インポートします。
-    -   `CommonModule`, `MatDialogModule`, `MatFormFieldModule`, `MatInputModule`, `FormsModule`, `MatButtonModule`
+```typescript
+// ダイアログに渡されるデータ
+export interface NicknameDialogData {
+  nickname: string | null;
+}
 
-### 4.2. インターフェース
+// ダイアログが返すデータ
+// string | undefined
+```
 
--   `DialogData`: ダイアログに渡されるデータの型を定義します。
-    -   `nickname: string;`
+### 4.2. 入出力
 
-### 4.3. プロパティ
+-   **入力 (DI)**: `MAT_DIALOG_DATA`
+    -   **型**: `NicknameDialogData`
+    -   **説明**: `AppComponent`から渡される、ユーザーの現在のニックネーム。
+-   **出力 (Dialog Result)**:
+    -   **保存時**: `string` (新しく入力されたニックネーム)
+    -   **キャンセル時**: `undefined`
 
--   `data: DialogData`: `inject(MAT_DIALOG_DATA)` を使って、呼び出し元から渡された現在のニックネームを含むオブジェクトを取得します。テンプレートの `ngModel` と双方向バインディングされています。
--   `dialogRef`: `inject(MatDialogRef<EditNicknameDialogComponent>)` を使って、このダイアログ自身への参照を取得します。
+### 4.3. フォームコントロールとバリデーション
 
-### 4.4. コンストラクタ
+| フィールド | コントロール | バリデーション | UI | 備考 |
+| :--- | :--- | :--- | :--- | :--- |
+| ニックネーム | `[(ngModel)]="data.nickname"` | **必須** (`required`), **最大長** (20文字) | `mat-form-field` | `mat-hint`で文字数カウンターを表示 |
 
--   DI（依存性注入）は `inject()` 関数で行っているため、コンストラクタは空です。
+## 5. データフロー (シーケンス図)
 
-### 4.5. メソッド
+```mermaid
+sequenceDiagram
+    participant User as ユーザー
+    participant App as AppComponent
+    participant NicknameDialog as EditNicknameDialog
+    participant AuthService as AuthService
 
--   `onNoClick(): void`: 「キャンセル」ボタンがクリックされたときに呼び出されます。`dialogRef.close()` を実行して、何も返さずにダイアログを閉じます。
+    User->>App: ヘッダーのメニューから「ニックネームを編集」をクリック
+    App->>NicknameDialog: open(EditNicknameDialog, { data: { nickname: currentNickname } })
+    NicknameDialog-->>User: ダイアログを表示
+    User->>NicknameDialog: 新しいニックネームを入力
+    User->>NicknameDialog: 「保存」ボタンをクリック
+    NicknameDialog-->>App: close(newNickname: string)
+    App->>AuthService: updateUserNickname(newNickname)
+    AuthService->>AuthService: Firestoreのusersコレクションを更新
+    Service-->>App: (Promise<void>)
+    App->>App: ヘッダーの表示を更新
+```
 
-## 5. データフロー
-
-1.  ユーザーがニックネーム編集ボタンをクリックします。
-2.  呼び出し元のコンポーネント（例: `AppComponent`）が `dialog.open(EditNicknameDialogComponent, ...)` を実行します。このとき、`data` プロパティに `{ nickname: '現在のニックネーム' }` というオブジェクトを渡します。
-3.  ダイアログが開かれ、入力フィールドに現在のニックネームが表示されます。
-4.  ユーザーが新しいニックネームを入力します。
-5.  ユーザーが「保存」ボタンをクリックします。
-6.  ダイアログが閉じ、`[mat-dialog-close]="data.nickname"` の指定により、入力された新しいニックネームの**文字列**が `dialogRef.afterClosed()` の `Observable` から射出されます。
-7.  呼び出し元のコンポーネントは、返された文字列を受け取り、`AuthService` や `UserService` を通じてFirestoreの `users` コレクションに保存されている該当ユーザーのニックネーム情報を更新します。
-
+1.  `AppComponent`が、ヘッダーのボタンクリックをトリガーに`dialog.open()`を呼び出します。このとき、`AuthService`から取得した現在のニックネームを`data`プロパティに渡します。
+2.  ユーザーが新しいニックネームを入力し、「保存」ボタンをクリックします。
+3.  ダイアログは、入力された新しいニックネーム（文字列）を結果として返して閉じます。
+4.  `AppComponent`は返された文字列を受け取り、`AuthService`の`updateUserNickname()`のようなメソッドを呼び出して、Firestoreの`users`コレクションに保存されているニックネーム情報を更新します。
+5.  更新が成功したら、ヘッダーに表示されているニックネームも新しいものに更新します。

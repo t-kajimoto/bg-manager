@@ -1,4 +1,3 @@
-
 # ゲーム詳細・評価編集ダイアログ 設計書 (`edit-user-data-dialog.md`)
 
 ## 1. 概要
@@ -13,73 +12,119 @@
 -   **Template**: `src/app/page/list/edit-user-data-dialog/edit-user-data-dialog.component.html`
 -   **Style**: `src/app/page/list/edit-user-data-dialog/edit-user-data-dialog.component.scss`
 
-## 3. UI要素とレイアウト
+## 3. UIレイアウト図
 
-ダイアログは複数のセクションに分かれています。
+```mermaid
+graph TD
+    subgraph "ダイアログ (mat-dialog-container)"
+        A["タイトル: {ゲーム名} の詳細 (mat-dialog-title)"]
+        subgraph "フォーム (mat-dialog-content)"
+            B["<b>基本情報</b>セクション"]
+            C["<b>あなたの評価</b>セクション"]
+            D["<b>みんなの評価</b>セクション (mat-expansion-panel)"]
+        end
+        subgraph "アクションボタン (mat-dialog-actions)"
+            E["削除 (button, color: warn)"] -- "flex-spacer" --> F["キャンセル (button)"]
+            F --> G["保存 (button, color: primary)"]
+        end
+        A --> B --> C --> D --> E
+    end
+```
 
--   **ダイアログタイトル (`mat-dialog-title`)**: `{{ data.name }}` のように、編集対象のゲーム名が動的に表示されます。
+## 4. 権限別機能一覧
 
--   **ユーザー評価セクション (`mat-dialog-content`)**: ログインユーザーが自身のプレイ状況を編集するエリアです。
-    -   **評価 (`h2` と星アイコン)**: 「あなたの評価」というタイトルと共に、星アイコン（`mat-icon`）が5つ並びます。
-        -   `(click)="setRating(i + 1)"`: 星をクリックすると `setRating` メソッドが呼ばれ、評価が更新されます。
-        -   `[class.filled]`: 評価の値に応じて星のスタイル（塗りつぶし）が変わります。
-    -   **ひとことコメント (`mat-form-field`)**: 評価に対するコメントを入力するテキストエリアです。
-        -   `[(ngModel)]="data.comment"`
-    -   **プレイ済みチェックボックス (`mat-checkbox`)**: このゲームをプレイしたことがあるかを示します。
-        -   `[(ngModel)]="data.played"`
+| UI要素 | 機能 | 一般ユーザー | 管理者 |
+| :--- | :--- | :--- | :--- |
+| **基本情報** | | |
+| 名前 | 編集 | 不可 (readonly) | **可能** |
+| 人数 | 編集 | 不可 (readonly) | **可能** |
+| 時間 | 編集 | 不可 (readonly) | **可能** |
+| 所有者 | 編集 | 不可 (readonly) | **可能** |
+| タグ | 追加・削除 | 不可 | **可能** |
+| **あなたの評価** | | |
+| プレイ済み | チェック | **可能** | **可能** |
+| 評価(星) | 編集 | **可能** | **可能** |
+| ひとこと | 編集 | **可能** | **可能** |
+| **アクション** | | |
+| 削除ボタン | 表示・実行 | 非表示 | **表示** |
+| 保存ボタン | 実行 | **可能** | **可能** |
 
--   **管理者編集セクション (`*ngIf="initialData.isAdmin"`)**: 管理者のみに表示されるエリアです。
-    -   `mat-divider`: ユーザーセクションと管理者セクションを視覚的に区切ります。
-    -   **基本情報フォーム**: `AddBoardgameDialog` と同様の入力フォーム（名前、人数、時間、タグ）が表示され、ゲームのマスターデータを直接編集できます。
-        -   各入力は `data` オブジェクトの各プロパティ（`name`, `min`, `max`, `time`, `tags`）にバインドされています。
+## 5. コンポーネント仕様 (`EditUserDataDialogComponent`)
 
--   **みんなの評価セクション (`mat-expansion-panel`)**: アコーディオン形式で、他の全ユーザーの評価を一覧表示します。
-    -   **パネルヘッダー (`mat-expansion-panel-header`)**: 「みんなの評価」というタイトルを表示します。
-    -   **評価テーブル (`table[mat-table]`)**: パネル内に配置されたテーブルです。
-        -   `dataSource="allEvaluationsDataSource"`
-        -   **表示列 (`displayedEvaluationColumns`)**: `photo`, `name`, `evaluation`, `comment`
-            -   `photo`: ユーザーのプロフィール写真 (`img`)
-            -   `name`: ユーザーのニックネーム
-            -   `evaluation`: ユーザーの評価（星アイコン）
-            -   `comment`: ユーザーのコメント
+### 5.1. クラスデコレーター
 
--   **アクションボタン (`mat-dialog-actions`)**:
-    -   **キャンセルボタン**: `(click)="onNoClick()"`
-    -   **保存ボタン**: `[mat-dialog-close]="data"`
+-   `@Component`: `standalone: true` であり、必要なモジュールを `imports` 配列で直接インポートします。
 
-## 4. コンポーネント仕様 (`EditUserDataDialogComponent`)
+### 5.2. 入出力
 
-### 4.1. プロパティ
+-   **入力 (DI)**: `MAT_DIALOG_DATA`
+    -   **型**: `EditUserDataDialogData` (`IBoardGame & { isAdmin: boolean; allTags: string[] }`)
+    -   **説明**: `ListComponent`から渡される、編集対象のゲーム情報、ユーザーの管理者フラグ、タグのオートコンプリート候補リスト。
+-   **出力 (Dialog Result)**:
+    -   **保存時**: `IBoardGame` (編集後のデータ)
+    -   **削除時**: `'deleted'` (文字列)
+    -   **キャンセル時**: `undefined`
 
--   `maxStars`, `maxStarsArray`: 評価の星を描画するための補助的なプロパティ。
--   `data: IBoardGame`: ダイアログ内の編集データを保持するメインオブジェクト。`ngModel` で双方向バインディングされます。
--   `initialData: IBoardGame & { isAdmin: boolean }`: `ListComponent` から渡される、変更前の元データと管理者フラグ。`inject(MAT_DIALOG_DATA)` で取得。編集権限の判定 (`*ngIf`) や、変更の差分検出に使用できます。
--   `allEvaluationsDataSource`: 「みんなの評価」テーブル用の `MatTableDataSource`。
--   `displayedEvaluationColumns`: 「みんなの評価」テーブルの列定義。
+### 5.3. 主要なプロパティ
 
-### 4.2. コンストラクタと `ngOnInit`
+-   `data: IBoardGame`: ダイアログ内の編集データを保持するメインオブジェクト。テンプレートの`ngModel`と双方向バインディングされます。
+-   `initialData: EditUserDataDialogData`: `inject(MAT_DIALOG_DATA)`で取得した、変更前の元データ。権限判定などに使用します。
+-   `allEvaluationsDataSource`: 「みんなの評価」テーブル用の`MatTableDataSource`。
+-   `tagCtrl`: タグ入力用の`FormControl`。
 
--   **constructor**: `MatDialogRef`, `BoardgameService` をインジェクトします。`initialData` を `data` にディープコピーして、編集中の状態を分離します。
--   **ngOnInit**: コンポーネントの初期化時に `loadAllEvaluations()` を呼び出します。
+### 5.4. 主要なメソッド
 
-### 4.3. メソッド
+-   `ngOnInit()`: コンポーネント初期化時に`loadAllEvaluations()`を呼び出します。
+-   `loadAllEvaluations(): Promise<void>`: `BoardgameService`を呼び出し、このゲームに対する全ユーザーの評価データを非同期で取得し、`allEvaluationsDataSource`にセットします。
+-   `onDeleteClick(): Promise<void>`: 削除ボタンクリック時の処理。`ConfirmationDialogComponent`を開き、ユーザーの最終確認を求めます。確認が得られた場合のみ、`BoardgameService.deleteBoardGame()`を呼び出し、ダイアログを`'deleted'`という結果で閉じます。
+-   `setRating(rating: number): void`: 評価の星がクリックされたときに`data.evaluation`の値を更新します。
+-   `getStarIcon(rating: number, index: number): string`: 評価値に応じた星アイコンの種類（`star`, `star_half`, `star_border`）を返すヘルパーメソッドです。
 
--   `loadAllEvaluations(): Promise<void>`: `BoardgameService.getAllEvaluationsForGame()` を呼び出し、現在のゲームに対する全ユーザーの評価データを非同期で取得し、`allEvaluationsDataSource` にセットします。
--   `onNoClick(): void`: ダイアログを閉じます。
--   `setRating(rating: number): void`: 評価の星がクリックされたときに `data.evaluation` の値を更新します。
--   `addTag(event: MatChipInputEvent): void`, `removeTag(tag: string): void`: 管理者権限がある場合のみ、タグの追加・削除を許可します。
--   `getStarIcon(rating: number, index: number): string`: 評価値に基づいて、塗りつぶし（`star`）、ハーフ（`star_half`）、枠のみ（`star_border`）のどのアイコンを表示するかを決定するヘルパーメソッドです。
+## 6. データフロー
 
-## 5. データフロー
+### 6.1. 保存時のシーケンス図
 
-1.  `ListComponent` で編集ボタンがクリックされ、`dialog.open(EditUserDataDialogComponent, ...)` が呼び出されます。このとき、`data` プロパティに、クリックされた行の `IBoardGame` オブジェクトと、ユーザーが管理者かどうかの `isAdmin` フラグを結合したオブジェクトが渡されます。
-2.  ダイアログが開かれ、`ngOnInit` で `loadAllEvaluations` が実行され、「みんなの評価」テーブルのデータが非同期で読み込まれます。
-3.  ユーザー（または管理者）がフォームの値を編集します。変更は `data` オブジェクトに即時反映されます。
-4.  ユーザーが「保存」ボタンをクリックします。
-5.  ダイアログが閉じ、変更後の `data` オブジェクト (`IBoardGame`) が `dialogRef.afterClosed()` から返されます。
-6.  `ListComponent` は返された `result` を受け取ります。
-7.  `result` をユーザーデータ (`played`, `evaluation`, `comment`) とボードゲームのマスターデータ（それ以外）に分割します。
-8.  `boardgameService.updateUserBoardGame()` を呼び出し、ユーザーデータを更新します。
-9.  管理者の場合は、さらに `boardgameService.updateBoardGame()` を呼び出し、マスターデータを更新します。
-10. `ListComponent` は、Firestoreからの再取得を待たずに、ローカルの `dataSource` を直接更新して、画面に即時変更を反映させます。
+```mermaid
+sequenceDiagram
+    participant User as ユーザー
+    participant List as ListComponent
+    participant EditDialog as EditUserDataDialog
+    participant Service as BoardgameService
 
+    User->>List: 編集ボタンをクリック
+    List->>EditDialog: open(EditUserDataDialog, { data: { game, isAdmin, allTags } })
+    EditDialog->>Service: getAllEvaluationsForGame(game.id)
+    Service-->>EditDialog: (Promise<Evaluation[]>)
+    EditDialog-->>User: ダイアログと全ユーザーの評価を表示
+    User->>EditDialog: フォームを編集
+    User->>EditDialog: 「保存」ボタンをクリック
+    EditDialog-->>List: close(IBoardGame)
+
+    List->>Service: updateUserBoardGame(game.id, userData)
+    alt isAdmin is true
+        List->>Service: updateBoardGame(game.id, boardGameData)
+    end
+    Service-->>List: (Promise<void>)
+    List->>List: ローカルのdataSourceを更新し、画面に即時反映
+```
+
+### 6.2. 削除時のシーケンス図
+
+```mermaid
+sequenceDiagram
+    participant User as ユーザー
+    participant EditDialog as EditUserDataDialog
+    participant ConfirmDialog as ConfirmationDialog
+    participant Service as BoardgameService
+    participant List as ListComponent
+
+    User->>EditDialog: 「削除」ボタンをクリック
+    EditDialog->>ConfirmDialog: open(ConfirmationDialog, { data: { message } })
+    ConfirmDialog-->>User: 確認メッセージを表示
+    User->>ConfirmDialog: 「はい」をクリック
+    ConfirmDialog-->>EditDialog: close(true)
+    EditDialog->>Service: deleteBoardGame(game.id)
+    Service-->>EditDialog: (Promise<void>)
+    EditDialog-->>List: close('deleted')
+    List->>List: loadBoardGames()を再実行し、リストから削除
+```
