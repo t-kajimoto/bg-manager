@@ -45,16 +45,24 @@
   padding: 24px;
 }
 
-/* 既存のログイン周りのスタイルはそのまま流用 */
-.user-info-toolbar {
+.user-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  max-width: 200px; /* ニックネームが長くなった場合の最大幅 */
 }
 
-.user-photo-toolbar {
+.user-photo {
   width: 32px;
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.user-nickname {
+  font-size: 0.9rem; /* 少し小さくする */
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
