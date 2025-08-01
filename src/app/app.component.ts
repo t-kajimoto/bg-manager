@@ -9,6 +9,13 @@ import { Firestore, doc, setDoc, onSnapshot, updateDoc, getDoc } from '@angular/
 import { MatDialog } from '@angular/material/dialog';
 import { EditNicknameDialogComponent } from './page/list/edit-nickname-dialog/edit-nickname-dialog.component';
 
+/**
+ * @class AppComponent
+ * @description
+ * このアプリケーションのルートコンポーネントです。
+ * 全ページで共通して表示されるヘッダー（ツールバー）の管理と、
+ * ユーザー認証（ログイン、ログアウト、ニックネーム変更）に関するUIロジックを担当します。
+ */
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -24,37 +31,60 @@ import { EditNicknameDialogComponent } from './page/list/edit-nickname-dialog/ed
 })
 export class AppComponent implements OnInit {
 
+  /** ユーザーがログインしているかどうかを示すフラグ。UIの表示切り替えに使用します。 */
   isLoggedIn: boolean = false;
-  userNickname: string | null = null; // displayNameからnicknameに変更
+  /** ログインユーザーのニックネーム。Firestoreから取得し、ヘッダーに表示します。 */
+  userNickname: string | null = null;
+  /** ログインユーザーのプロフィール写真URL。ヘッダーに表示します。 */
   userPhotoUrl: string | null = null;
+  /** 現在のログインユーザーのFirebase Userオブジェクト。UIDなどを取得するために使用します。 */
   private currentUser: User | null = null;
 
+  /**
+   * @constructor
+   * @param router - Angularのルーターサービス（現在は未使用）。
+   * @param auth - Firebase Authenticationサービス。
+   * @param firestore - Firestoreデータベースサービス。
+   * @param dialog - Angular Materialのダイアログサービス。
+   */
   constructor(
     private router: Router, 
     private auth: Auth, 
     private firestore: Firestore,
-    public dialog: MatDialog // MatDialogを注入
+    public dialog: MatDialog
   ) {}
 
+  /**
+   * @method ngOnInit
+   * @description
+   * コンポーネントの初期化時に、Firebaseの認証状態の変更を監視します。
+   * ログイン状態に応じて、UIの表示に必要なプロパティを更新します。
+   */
   ngOnInit() {
+    // onAuthStateChangedで認証状態の変更をサブスクライブします。
     this.auth.onAuthStateChanged(user => {
       if (user) {
+        // --- ユーザーがログインしている場合の処理 ---
         this.isLoggedIn = true;
         this.currentUser = user;
         this.userPhotoUrl = user.photoURL;
         
-        // Firestoreからユーザードキュメントを監視してニックネームを取得
+        // Firestoreの`users`コレクションから、対応するユーザードキュメントをリアルタイムで監視します。
+        // これにより、ニックネームが変更された際に即座にヘッダーの表示を更新できます。
         const userRef = doc(this.firestore, 'users', user.uid);
         onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const userData = docSnap.data();
-            this.userNickname = userData['nickname'] || user.displayName; // nicknameがなければdisplayName
+            // ニックネームが設定されていればそれを、なければGoogleの表示名を使用します。
+            this.userNickname = userData['nickname'] || user.displayName;
           } else {
-            this.userNickname = user.displayName; // ドキュメントがまだなければdisplayName
+            // Firestoreにドキュメントがまだ存在しない場合（初回ログイン直後など）は、Googleの表示名を一時的に使用します。
+            this.userNickname = user.displayName;
           }
         });
         console.log('User is logged in:', user.displayName);
       } else {
+        // --- ユーザーがログアウトしている場合の処理 ---
         this.isLoggedIn = false;
         this.currentUser = null;
         this.userNickname = null;
@@ -64,6 +94,13 @@ export class AppComponent implements OnInit {
     });
   }
 
+  /**
+   * @method loginWithGoogle
+   * @description
+   * Googleの認証プロバイダを使用して、ポップアップウィンドウでのログインフローを開始します。
+   * ログイン成功後、Firestoreの`users`コレクションにユーザー情報が存在するか確認し、
+   * 存在しない場合は新規作成、存在する場合は情報を更新します。
+   */
   async loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     try {
@@ -76,16 +113,18 @@ export class AppComponent implements OnInit {
         const docSnap = await getDoc(userRef);
 
         if (!docSnap.exists()) {
-          // ドキュメントが存在しない場合（初回ログイン）、新規作成
+          // ドキュメントが存在しない場合（初回ログイン）、Firestoreに新しいユーザードキュメントを作成します。
+          // ニックネームの初期値として、Googleの表示名を設定します。
           await setDoc(userRef, {
             displayName: user.displayName,
-            nickname: user.displayName, // displayNameをnicknameの初期値として設定
+            nickname: user.displayName,
             photoURL: user.photoURL,
             email: user.email
           });
           console.log('New user profile created in Firestore.');
         } else {
-          // ドキュメントが存在する場合（再ログイン）、Googleアカウント由来の情報を更新
+          // ドキュメントが存在する場合（再ログイン）、Googleアカウント由来の基本情報（表示名、写真）を最新の状態に更新します。
+          // ニックネームはユーザーが任意で変更するため、ここでは更新しません。
           await updateDoc(userRef, {
             displayName: user.displayName,
             photoURL: user.photoURL
@@ -95,25 +134,34 @@ export class AppComponent implements OnInit {
       }
     } catch (error: any) {
       console.error('Google login failed:', error);
-      const errorCode = error.code;
-      if (errorCode === 'auth/popup-closed-by-user') {
+      // ユーザーがポップアップを閉じた場合のエラーは、コンソールに出力するだけで、ユーザーには通知しません。
+      if (error.code === 'auth/popup-closed-by-user') {
         console.log('Login popup closed by user.');
       }
     }
   }
 
+  /**
+   * @method openEditNicknameDialog
+   * @description
+   * ニックネームを編集するためのダイアログを開きます。
+   * ダイアログが閉じた後、返された新しいニックネームでFirestoreのデータを更新します。
+   */
   openEditNicknameDialog(): void {
-    if (!this.currentUser) return;
+    if (!this.currentUser) return; // ユーザー情報がなければ何もしない
 
     const dialogRef = this.dialog.open(EditNicknameDialogComponent, {
       width: '300px',
-      data: { nickname: this.userNickname },
+      data: { nickname: this.userNickname }, // 現在のニックネームをダイアログに渡す
     });
 
+    // ダイアログが閉じた後の処理をサブスクライブします。
     dialogRef.afterClosed().subscribe(async (result) => {
+      // 結果が存在し（キャンセルされなかった）、かつユーザー情報がある場合のみ処理を続行します。
       if (result && this.currentUser) {
         const userRef = doc(this.firestore, 'users', this.currentUser.uid);
         try {
+          // Firestoreの該当ユーザードキュメントの`nickname`フィールドを更新します。
           await updateDoc(userRef, { nickname: result });
           console.log('Nickname updated successfully!');
         } catch (error) {
@@ -123,6 +171,11 @@ export class AppComponent implements OnInit {
     });
   }
 
+  /**
+   * @method logout
+   * @description
+   * Firebaseからサインアウトし、アプリケーションをログアウト状態にします。
+   */
   async logout() {
     try {
       await signOut(this.auth);
