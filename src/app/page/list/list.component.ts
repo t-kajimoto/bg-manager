@@ -50,7 +50,13 @@ export class ListComponent implements AfterViewInit, OnInit {
   maxStars: number = 5;
   maxStarsArray: number[] = Array(this.maxStars).fill(0);
   allTags: string[] = [];
-  @ViewChild(MatSort) sort!: MatSort;
+  private _sort!: MatSort;
+  @ViewChild(MatSort) set sort(sort: MatSort) {
+    if (sort) {
+      this._sort = sort;
+      this.dataSource.sort = this._sort;
+    }
+  }
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   constructor(
@@ -67,10 +73,18 @@ export class ListComponent implements AfterViewInit, OnInit {
 
   ngOnInit() {
     this.loadBoardGames();
+    this.dataSource.sortingDataAccessor = (item, property) => {
+      switch (property) {
+        case 'players': return item.min;
+        case 'evaluation': return item.evaluation;
+        case 'averageEvaluation': return item.averageEvaluation;
+        default: return (item as any)[property];
+      }
+    };
   }
 
   ngAfterViewInit() {
-    this.dataSource.sort = this.sort;
+    // this.dataSource.sort = this.sort;
   }
 
   loadBoardGames() {
