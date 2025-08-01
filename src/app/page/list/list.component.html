@@ -2,17 +2,19 @@
 
   <mat-card class="filter-card">
     <mat-card-content class="filter-card-content">
-      <mat-form-field appearance="outline" class="filter-input">
-        <mat-label>ゲームを検索...</mat-label>
-        <mat-icon matPrefix>search</mat-icon>
-        <input matInput (keyup)="applyFilter($event)" placeholder="タイトル、タグなど" #searchInput>
-        <button mat-icon-button matSuffix *ngIf="searchInput.value" (click)="clearSearch()">
-          <mat-icon>close</mat-icon>
+      <div class="search-container">
+        <mat-form-field appearance="outline" class="filter-input">
+          <mat-label>ゲームを検索...</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput (keyup)="applyFilter($event)" placeholder="タイトル、タグなど" #searchInput>
+          <button mat-icon-button matSuffix *ngIf="searchInput.value" (click)="clearSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+        <button mat-icon-button color="secondary" (click)="openGachaDialog()" matTooltip="ボドゲガチャ">
+          <mat-icon>casino</mat-icon>
         </button>
-      </mat-form-field>
-      <button mat-icon-button color="secondary" (click)="openGachaDialog()" matTooltip="ボドゲガチャ">
-        <mat-icon>casino</mat-icon>
-      </button>
+      </div>
       <button mat-flat-button color="primary" (click)="openAddBoardGameDialog()" *ngIf="isAdmin$ | async">
         <mat-icon>add</mat-icon>
         <span>新しいゲームを追加</span>
