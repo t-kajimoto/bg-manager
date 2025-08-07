@@ -14,7 +14,7 @@
 
 ### 1.3. 主要技術スタック
 
--   **フロントエンド**: Angular (v19+), TypeScript, SCSS (Standalone Components構成)
+-   **フロントエンド**: Angular (v20+), TypeScript, SCSS (Standalone Components構成)
 -   **UIライブラリ**: Angular Material
 -   **バックエンド / BaaS**: Firebase (Google Cloud)
     -   **データベース**: Cloud Firestore

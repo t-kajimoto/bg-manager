@@ -96,18 +96,18 @@ body {
 }
 
 .mat-mdc-button.mat-primary {
-  --mdc-protected-button-container-color: var(--primary-color);
-  --mdc-protected-button-label-text-color: #fff;
+  --mat-button-protected-container-color: var(--primary-color);
+  --mat-button-protected-label-text-color: #fff;
 }
 
 .mat-mdc-raised-button.mat-primary {
-  --mdc-protected-button-container-color: var(--primary-color);
-  --mdc-protected-button-label-text-color: #fff;
+  --mat-button-protected-container-color: var(--primary-color);
+  --mat-button-protected-label-text-color: #fff;
 }
 
 .mat-mdc-flat-button.mat-primary {
-  --mdc-protected-button-container-color: transparent;
-  --mdc-protected-button-label-text-color: var(--primary-color);
+  --mat-button-protected-container-color: transparent;
+  --mat-button-protected-label-text-color: var(--primary-color);
 }
 
 .mat-toolbar.mat-primary {

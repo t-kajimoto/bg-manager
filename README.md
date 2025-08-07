@@ -19,7 +19,7 @@ HARIDICEは、あなたが持っているボードゲームを簡単に記録・
 
 このアプリケーションは、モダンなWeb技術を用いて構築されています。
 
--   **フロントエンド**: [Angular](https://angular.io/) (v19+), [TypeScript](https://www.typescriptlang.org/)
+-   **フロントエンド**: [Angular](https://angular.io/) (v20+), [TypeScript](https://www.typescriptlang.org/)
 -   **UIライブラリ**: [Angular Material](https://material.angular.io/)
 -   **バックエンド (BaaS)**: [Firebase](https://firebase.google.com/)
     -   **データベース**: Cloud Firestore (NoSQL)

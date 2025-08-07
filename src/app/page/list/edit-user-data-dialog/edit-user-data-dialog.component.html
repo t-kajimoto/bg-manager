@@ -38,21 +38,25 @@
       <mat-form-field appearance="outline" class="full-width-field">
         <mat-label>タグを追加・削除</mat-label>
         <mat-chip-grid #chipGrid>
-          <mat-chip-row *ngFor="let tag of data.tags" (removed)="removeTag(tag)">
-            {{tag}}
-            <button matChipRemove><mat-icon>cancel</mat-icon></button>
-          </mat-chip-row>
+          @for (tag of data.tags; track tag) {
+            <mat-chip-row (removed)="removeTag(tag)">
+              {{tag}}
+              <button matChipRemove><mat-icon>cancel</mat-icon></button>
+            </mat-chip-row>
+          }
         </mat-chip-grid>
         <input matInput placeholder="新しいタグ..."
-               #tagInput
-               [formControl]="tagCtrl"
-               [matAutocomplete]="auto"
-               [matChipInputFor]="chipGrid"
-               (matChipInputTokenEnd)="addTag($event)" />
+          #tagInput
+          [formControl]="tagCtrl"
+          [matAutocomplete]="auto"
+          [matChipInputFor]="chipGrid"
+          (matChipInputTokenEnd)="addTag($event)" />
         <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
-          <mat-option *ngFor="let tag of filteredTags | async" [value]="tag">
-            {{tag}}
-          </mat-option>
+          @for (tag of filteredTags | async; track tag) {
+            <mat-option [value]="tag">
+              {{tag}}
+            </mat-option>
+          }
         </mat-autocomplete>
       </mat-form-field>
     </section>
@@ -67,7 +71,9 @@
           <mat-checkbox class="played-checkbox" [(ngModel)]="data.played">プレイ済み</mat-checkbox>
         </div>
         <div class="stars">
-          <mat-icon *ngFor="let star of maxStarsArray; let i = index" (click)="setRating(i + 1)" [ngClass]="{'filled-star': getStarIcon(data.evaluation, i) !== 'star_border'}">{{ getStarIcon(data.evaluation, i) }}</mat-icon>
+          @for (star of maxStarsArray; track star; let i = $index) {
+            <mat-icon (click)="setRating(i + 1)" [ngClass]="{'filled-star': getStarIcon(data.evaluation, i) !== 'star_border'}">{{ getStarIcon(data.evaluation, i) }}</mat-icon>
+          }
         </div>
         <mat-form-field appearance="outline" class="comment-field" >
           <mat-label>ひとこと</mat-label>
@@ -112,7 +118,9 @@
             <th mat-header-cell *matHeaderCellDef>評価</th>
             <td mat-cell *matCellDef="let element">
               <div class="star-display">
-                <mat-icon *ngFor="let star of maxStarsArray; let i = index" [ngClass]="{'filled-star': getStarIcon(element.evaluation, i) !== 'star_border'}">{{ getStarIcon(element.evaluation, i) }}</mat-icon>
+                @for (star of maxStarsArray; track star; let i = $index) {
+                  <mat-icon [ngClass]="{'filled-star': getStarIcon(element.evaluation, i) !== 'star_border'}">{{ getStarIcon(element.evaluation, i) }}</mat-icon>
+                }
               </div>
             </td>
           </ng-container>
@@ -134,7 +142,9 @@
   </div>
 
   <div mat-dialog-actions class="dialog-actions">
-    <button mat-button color="warn" *ngIf="initialData.isAdmin" (click)="onDeleteClick()">削除</button>
+    @if (initialData.isAdmin) {
+      <button mat-button color="warn" (click)="onDeleteClick()">削除</button>
+    }
     <span class="flex-spacer"></span>
     <button mat-button (click)="onNoClick()">キャンセル</button>
     <button mat-flat-button color="primary" [mat-dialog-close]="data">保存</button>
