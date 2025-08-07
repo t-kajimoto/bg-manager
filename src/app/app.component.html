@@ -2,9 +2,11 @@
   <img src="/icon.png" alt="HARIDICE Logo" class="toolbar-logo">
   <span>HARIDICE</span>
   <span class="toolbar-spacer"></span>
-  <ng-container *ngIf="isLoggedIn; else loggedOut">
+  @if (isLoggedIn) {
     <div class="user-profile">
-      <img *ngIf="userPhotoUrl" [src]="userPhotoUrl" alt="User Photo" class="user-photo">
+      @if (userPhotoUrl) {
+        <img [src]="userPhotoUrl" alt="User Photo" class="user-photo">
+      }
       <span class="user-nickname">{{ userNickname }}</span>
       <button mat-icon-button (click)="openEditNicknameDialog()" matTooltip="ニックネームを編集">
         <mat-icon>edit</mat-icon>
@@ -13,10 +15,9 @@
     <button mat-icon-button (click)="logout()" matTooltip="ログアウト">
       <mat-icon>logout</mat-icon>
     </button>
-  </ng-container>
-  <ng-template #loggedOut>
+  } @else {
     <button mat-icon-button (click)="loginWithGoogle()" matTooltip="ログイン"><mat-icon>login</mat-icon></button>
-  </ng-template>
+  }
 </mat-toolbar>
 
 <div class="hero-section">

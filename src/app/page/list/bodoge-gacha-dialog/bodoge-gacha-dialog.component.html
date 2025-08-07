@@ -21,23 +21,27 @@
   <mat-form-field class="full-width">
     <mat-label>タグ</mat-label>
     <mat-chip-grid #chipGrid aria-label="タグを入力">
-      <mat-chip-row *ngFor="let tag of data.tags" (removed)="removeTag(tag)">
-        {{tag}}
-        <button matChipRemove [attr.aria-label]="'remove ' + tag">
-          <mat-icon>cancel</mat-icon>
-        </button>
-      </mat-chip-row>
+      @for (tag of data.tags; track tag) {
+        <mat-chip-row (removed)="removeTag(tag)">
+          {{tag}}
+          <button matChipRemove [attr.aria-label]="'remove ' + tag">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip-row>
+      }
     </mat-chip-grid>
     <input placeholder="新しいタグ..."
-           #tagInput
-           [formControl]="tagCtrl"
-           [matAutocomplete]="auto"
-           [matChipInputFor]="chipGrid"
-           (matChipInputTokenEnd)="addTag($event)"/>
+      #tagInput
+      [formControl]="tagCtrl"
+      [matAutocomplete]="auto"
+      [matChipInputFor]="chipGrid"
+      (matChipInputTokenEnd)="addTag($event)"/>
     <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
-      <mat-option *ngFor="let tag of filteredTags | async" [value]="tag">
-        {{tag}}
-      </mat-option>
+      @for (tag of filteredTags | async; track tag) {
+        <mat-option [value]="tag">
+          {{tag}}
+        </mat-option>
+      }
     </mat-autocomplete>
   </mat-form-field>
 

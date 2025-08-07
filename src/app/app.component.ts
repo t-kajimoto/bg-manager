@@ -4,7 +4,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Auth, GoogleAuthProvider, signInWithPopup, UserCredential, signOut, User } from '@angular/fire/auth';
-import { CommonModule } from '@angular/common';
+
 import { Firestore, doc, setDoc, onSnapshot, updateDoc, getDoc } from '@angular/fire/firestore';
 import { MatDialog } from '@angular/material/dialog';
 import { EditNicknameDialogComponent } from './page/list/edit-nickname-dialog/edit-nickname-dialog.component';
@@ -23,9 +23,8 @@ import { EditNicknameDialogComponent } from './page/list/edit-nickname-dialog/ed
     RouterOutlet,
     MatToolbarModule,
     MatButtonModule,
-    MatIconModule,
-    CommonModule,
-  ],
+    MatIconModule
+],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })

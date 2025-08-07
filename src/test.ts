@@ -17,8 +17,8 @@ getTestBed().initTestEnvironment(
   platformBrowserDynamicTesting(),
   // オプション: 各テストの後にコンポーネントを自動的に破棄するかどうかの設定です。
   // `false`に設定すると、テスト間のクリーンアップを手動で制御する必要がある場合に役立ちますが、
-  // 一般的には`true`（デフォルト）が推奨されます。このプロジェクトでは明示的に`false`が設定されています。
+  // `true`（デフォルト）に設定することで、各テストが独立した状態で実行されることを保証し、副作用を防ぎます。
   {
-    teardown: { destroyAfterEach: false }
+    teardown: { destroyAfterEach: true }
   }
 );
