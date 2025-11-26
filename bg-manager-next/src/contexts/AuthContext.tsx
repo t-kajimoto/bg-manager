@@ -1,0 +1,108 @@
+'use client';
+
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase/config';
+
+/**
+ * @interface ICustomUser
+ * @description Firestoreに保存されている、アプリケーション独自のユーザー情報の型定義です。
+ * @property {string} nickname - ユーザーが設定したニックネーム。
+ * @property {boolean} isAdmin - ユーザーが管理者権限を持つかどうかを示すフラグ。
+ */
+interface ICustomUser {
+  nickname: string;
+  isAdmin: boolean;
+}
+
+/**
+ * @interface AuthContextType
+ * @description AuthContextが提供する値の型定義です。
+ * @property {User | null} user - Firebase Authenticationから提供されるユーザーオブジェクト。未ログイン時はnull。
+ * @property {ICustomUser | null} customUser - Firestoreから取得したカスタムユーザー情報。未ログイン時や情報がない場合はnull。
+ * @property {boolean} loading - 認証状態をチェックしている最中かどうかを示すフラグ。trueの間はスピナーなどを表示するのに使えます。
+ */
+interface AuthContextType {
+  user: User | null;
+  customUser: ICustomUser | null;
+  loading: boolean;
+}
+
+/**
+ * @const AuthContext
+ * @description 認証情報（Firebaseユーザー、カスタムユーザー情報、ローディング状態）をアプリケーション全体で共有するためのReact Contextです。
+ */
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  customUser: null,
+  loading: true,
+});
+
+/**
+ * @component AuthProvider
+ * @description アプリケーションに認証機能を提供するContext Providerコンポーネントです。
+ * Firebase Authenticationの認証状態を監視し、ログインしているユーザーの情報を取得・保持します。
+ * このコンポーネントでラップされた子コンポーネントは、`useAuth`フックを通じて認証情報にアクセスできます。
+ * @param {{ children: ReactNode }} props - ラップする子コンポーネント。
+ */
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  // Firebaseのユーザー情報を保持するstate
+  const [user, setUser] = useState<User | null>(null);
+  // Firestoreのカスタムユーザー情報を保持するstate
+  const [customUser, setCustomUser] = useState<ICustomUser | null>(null);
+  // ローディング状態を保持するstate
+  const [loading, setLoading] = useState(true);
+
+  // 副作用フックを使用して、コンポーネントのマウント時に一度だけ認証状態の監視を開始します。
+  useEffect(() => {
+    // Firebaseの設定が読み込めなかった場合（環境変数が未設定など）は、何もせずに処理を中断します。
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
+    // onAuthStateChangedはFirebase Authの認証状態（ログイン、ログアウト）が変わるたびに呼び出されるリスナーを登録します。
+    // 返り値のunsubscribe関数をクリーンアップ時に呼び出すことで、メモリリークを防ぎます。
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // ユーザーがログインしている、かつFirestoreのDBインスタンスも利用可能な場合
+      if (user && db) {
+        // 取得したユーザー情報をstateにセットします。
+        setUser(user);
+
+        // Firestoreからこのユーザーに対応する追加情報を取得します。
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        // ドキュメントが存在すれば、そのデータをカスタムユーザー情報のstateにセットします。
+        if (userDoc.exists()) {
+          setCustomUser(userDoc.data() as ICustomUser);
+        }
+      } else {
+        // ユーザーがログアウトしている場合、すべてのユーザー情報をnullにリセットします。
+        setUser(null);
+        setCustomUser(null);
+      }
+      // 認証状態のチェックが完了したので、ローディング状態をfalseにします。
+      setLoading(false);
+    });
+
+    // コンポーネントがアンマウントされる際に、登録したリスナーを解除します。
+    return () => unsubscribe();
+  }, []); // 空の依存配列は、このuseEffectがマウント時に一度だけ実行されることを意味します。
+
+  // Contextに渡す値
+  const value = { user, customUser, loading };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+/**
+ * @hook useAuth
+ * @description `AuthContext`の値を簡単に利用するためのカスタムフックです。
+ * このフックを使うことで、コンポーネントは認証状態（ユーザー情報、ローディング状態）にアクセスできます。
+ * @returns {AuthContextType} 現在の認証情報。
+ */
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
