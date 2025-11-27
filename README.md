@@ -66,6 +66,18 @@ npm install
 npm run dev
 ```
 
+#### Docker を使った開発サーバーの起動
+
+ローカルに Node.js をインストールせずにホットリロード開発したい場合は、`web-dev` コンテナを利用できます。
+
+```bash
+docker compose --profile dev up web-dev
+```
+
+- Windows でもファイル変更を正しく検知できるよう `WATCHPACK_POLLING`/`CHOKIDAR_USEPOLLING` を有効化しています。
+- `node_modules` は named volume (`node_modules_dev`) に保存されるため、ホストOSの依存環境と混ざりません。
+- 停止する際は `Ctrl+C` を押すか、別ターミナルで `docker compose --profile dev down` を実行してください。
+
 ブラウザで [http://localhost:3000](http://localhost:3000) を開くと、アプリケーションが表示されます。
 ソースコードを編集すると、ページは自動的に更新されます。
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { AppBar, Toolbar, Typography, Button, Box, CircularProgress } from '@mui/material';
-import { GoogleAuthProvider, signInWithRedirect, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -28,9 +28,9 @@ export default function Header() {
     // Google認証のプロバイダーインスタンスを作成します。
     const provider = new GoogleAuthProvider();
     try {
-      // signInWithRedirectを実行すると、Googleのログインページにリダイレクトされます。
-      // ログインが成功すると、アプリケーションにリダイレクトされ直し、AuthContextのonAuthStateChangedが検知します。
-      await signInWithRedirect(auth, provider);
+      // signInWithPopupを利用すると、現在のタブを遷移させることなく認証ダイアログが開くため、
+      // redirect URI の制約を気にせずにログインできます。ログインが完了すると onAuthStateChanged が発火します。
+      await signInWithPopup(auth, provider);
     } catch (error) {
       console.error("Error signing in: ", error);
     }

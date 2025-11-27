@@ -26,18 +26,34 @@ interface UseBoardgamesReturn {
  *   - `error`: データ取得中に発生したエラー。
  */
 export const useBoardgames = (): UseBoardgamesReturn => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [boardGames, setBoardGames] = useState<IBoardGame[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // 認証状態の確認が終わる前にFirestoreへ問い合わせると、匿名リクエスト扱いで即座に拒否されるため待機する
+    if (authLoading) {
+      return;
+    }
+
+    // Firestoreルールでは認証済みユーザーのみがboardGames/userBoardGamesを読み取れる
+    // 未ログインのままクエリすると "Missing or insufficient permissions." が発生するため、早期にエラーを提示する
+    if (!user) {
+      setBoardGames([]);
+      setError(new Error('ボードゲームを表示するにはログインが必要です。'));
+      setLoading(false);
+      return;
+    }
+
     if (!db) {
       setError(new Error("データベース接続に失敗しました。"));
       setLoading(false);
       return;
     }
 
+    // クエリをやり直す前にステータスを初期化して、再ログイン時に前回のエラーが残らないようにする
+    setError(null);
     setLoading(true);
 
     const qGames = query(collection(db, 'boardGames'));
@@ -100,7 +116,7 @@ export const useBoardgames = (): UseBoardgamesReturn => {
     });
 
     return () => unsubscribeGames();
-  }, [user]);
+  }, [user, authLoading]);
 
   return { boardGames, loading, error };
 };
