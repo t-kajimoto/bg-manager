@@ -1,8 +1,0 @@
-<h1 mat-dialog-title>{{ data.title || '確認' }}</h1>
-<div mat-dialog-content>
-  <p>{{ data.message }}</p>
-</div>
-<div mat-dialog-actions align="end">
-  <button mat-button (click)="onNoClick()">{{ data.cancelText || 'いいえ' }}</button>
-  <button mat-flat-button color="warn" [mat-dialog-close]="true" cdkFocusInitial>{{ data.confirmText || 'はい' }}</button>
-</div>
