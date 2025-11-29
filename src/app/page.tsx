@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  Box, Container, Typography, CircularProgress, Card, CardActions, CardContent,
+  Box, Container, Typography, Card, CardActions, CardContent,
   Chip, Rating, Alert, Button, TextField, InputAdornment, MenuItem, Snackbar, IconButton
 } from "@mui/material";
 import Header from "./_components/Header";
@@ -19,6 +19,8 @@ import { EditBoardgameDialog } from "@/components/EditBoardgameDialog";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { EditUserEvaluationDialog } from "@/components/EditUserEvaluationDialog";
 import { BodogeGachaDialog, GachaCondition } from "@/components/BodogeGachaDialog";
+import { GachaResultDialog } from "@/components/GachaResultDialog";
+import { BoardGameSkeleton } from "@/components/BoardGameSkeleton";
 import { useBoardgameManager } from '@/hooks/useBoardgameManager';
 import { useState } from "react";
 
@@ -32,12 +34,15 @@ export default function Home() {
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [openEvaluationDialog, setOpenEvaluationDialog] = useState(false);
   const [openGachaDialog, setOpenGachaDialog] = useState(false);
+  const [openGachaResult, setOpenGachaResult] = useState(false);
 
   // Selection states
   const [selectedGame, setSelectedGame] = useState<IBoardGame | null>(null);
+  const [gachaResultGame, setGachaResultGame] = useState<IBoardGame | null>(null);
 
   // Search & Sort states
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterTags, setFilterTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('name');
 
   // Snackbar state
@@ -71,9 +76,21 @@ export default function Home() {
 
   const allTags = Array.from(new Set(boardGames.flatMap(g => g.tags || []))).sort();
 
+  const handleTagClick = (tag: string) => {
+    if (!filterTags.includes(tag)) {
+      setFilterTags([...filterTags, tag]);
+    }
+  };
+
+  const handleTagDelete = (tagToDelete: string) => {
+    setFilterTags(filterTags.filter((tag) => tag !== tagToDelete));
+  };
+
   const filteredBoardGames = boardGames.filter(game => {
     const query = searchQuery.toLowerCase();
-    return game.name.toLowerCase().includes(query) || game.tags?.some(t => t.toLowerCase().includes(query));
+    const matchesSearch = game.name.toLowerCase().includes(query) || game.tags?.some(t => t.toLowerCase().includes(query));
+    const matchesTags = filterTags.length === 0 || filterTags.every(t => game.tags?.includes(t));
+    return matchesSearch && matchesTags;
   }).sort((a, b) => {
     if (sortBy === 'name') return a.name.localeCompare(b.name);
     if (sortBy === 'time') return a.time - b.time;
@@ -97,21 +114,17 @@ export default function Home() {
 
     if (candidates.length > 0) {
       const winner = candidates[Math.floor(Math.random() * candidates.length)];
-      setSearchQuery(winner.name);
-      setSnackbarMessage(`「${winner.name}」が選ばれました！`);
+      setGachaResultGame(winner);
+      setOpenGachaResult(true);
     } else {
       setSnackbarMessage("条件に合うゲームが見つかりませんでした。");
+      setOpenSnackbar(true);
     }
-    setOpenSnackbar(true);
   };
 
   const renderContent = () => {
     if (loading) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <CircularProgress />
-        </Box>
-      );
+      return <BoardGameSkeleton />;
     }
 
     if (error) {
@@ -124,9 +137,29 @@ export default function Home() {
 
     if (boardGames.length === 0) {
       return (
-        <Typography sx={{ mt: 4, textAlign: 'center' }}>
-          登録されているボードゲームはありません。
-        </Typography>
+        <Box sx={{ mt: 8, textAlign: 'center' }}>
+           <Typography variant="h6" color="text.secondary">
+            登録されているボードゲームはありません。
+          </Typography>
+          {customUser?.isAdmin && (
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpenAddDialog(true)} sx={{ mt: 2 }}>
+              最初のゲームを追加
+            </Button>
+          )}
+        </Box>
+      );
+    }
+
+    if (filteredBoardGames.length === 0) {
+       return (
+        <Box sx={{ mt: 8, textAlign: 'center' }}>
+          <Typography variant="h6" color="text.secondary">
+            条件に一致するゲームが見つかりませんでした。
+          </Typography>
+          <Button onClick={() => { setSearchQuery(''); setFilterTags([]); }} sx={{ mt: 2 }}>
+             条件をクリア
+          </Button>
+        </Box>
       );
     }
 
@@ -169,7 +202,7 @@ export default function Home() {
                 </Box>
                 <Box sx={{ mt: 2 }}>
                   {game.tags?.map((tag) => (
-                    <Chip key={tag} label={tag} size="small" sx={{ mr: 0.5, mb: 0.5 }} onClick={() => setSearchQuery(tag)}/>
+                    <Chip key={tag} label={tag} size="small" sx={{ mr: 0.5, mb: 0.5 }} onClick={() => handleTagClick(tag)}/>
                   ))}
                 </Box>
               </CardContent>
@@ -214,41 +247,64 @@ export default function Home() {
           </Box>
         </Box>
 
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-          <TextField
-            label="検索"
-            variant="outlined"
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: searchQuery && (
-                <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => setSearchQuery('')}>
-                    <CloseIcon />
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-            sx={{ flexGrow: 1 }}
-          />
-          <TextField
-            select
-            label="並び替え"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            size="small"
-            sx={{ minWidth: 120 }}
-          >
-            <MenuItem value="name">名前順</MenuItem>
-            <MenuItem value="time">時間順</MenuItem>
-            <MenuItem value="evaluation">評価順</MenuItem>
-          </TextField>
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <TextField
+              label="検索"
+              variant="outlined"
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchQuery('')}>
+                      <CloseIcon />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+              sx={{ flexGrow: 1 }}
+            />
+            <TextField
+              select
+              label="並び替え"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              size="small"
+              sx={{ minWidth: 120 }}
+            >
+              <MenuItem value="name">名前順</MenuItem>
+              <MenuItem value="time">時間順</MenuItem>
+              <MenuItem value="evaluation">評価順</MenuItem>
+            </TextField>
+          </Box>
+
+          {filterTags.length > 0 && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+              <Typography variant="body2" sx={{ alignSelf: 'center', mr: 1, color: 'text.secondary' }}>
+                選択中のタグ:
+              </Typography>
+              {filterTags.map((tag) => (
+                <Chip
+                  key={tag}
+                  label={tag}
+                  onDelete={() => handleTagDelete(tag)}
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                />
+              ))}
+              <Button size="small" onClick={() => setFilterTags([])} sx={{ ml: 'auto' }}>
+                すべてクリア
+              </Button>
+            </Box>
+          )}
         </Box>
 
         {renderContent()}
@@ -267,6 +323,7 @@ export default function Home() {
       />
       <EditUserEvaluationDialog open={openEvaluationDialog} onClose={() => setOpenEvaluationDialog(false)} game={selectedGame} />
       <BodogeGachaDialog open={openGachaDialog} onClose={handleGacha} allTags={allTags} />
+      <GachaResultDialog open={openGachaResult} onClose={() => setOpenGachaResult(false)} game={gachaResultGame} />
 
       <Snackbar
         open={openSnackbar}
