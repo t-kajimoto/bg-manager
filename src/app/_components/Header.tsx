@@ -1,96 +1,110 @@
 'use client';
 
-import { AppBar, Toolbar, Typography, Button, Box, CircularProgress } from '@mui/material';
+import { useState } from 'react';
+import { AppBar, Toolbar, Typography, Button, Box, CircularProgress, Menu, MenuItem } from '@mui/material';
 import { GoogleAuthProvider, signInWithRedirect, signOut } from 'firebase/auth';
+import AccountCircle from '@mui/icons-material/AccountCircle';
 import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/contexts/AuthContext';
+import { EditNicknameDialog } from '@/components/EditNicknameDialog';
 
-/**
- * @component Header
- * @description アプリケーションの全ページで共通して表示されるヘッダーコンポーネントです。
- * ユーザーのログイン状態に応じて、ログインボタンやユーザー名、ログアウトボタンを動的に表示します。
- */
 export default function Header() {
-  // useAuthフックを使って、グローバルな認証情報（ユーザー、カスタムユーザー情報、ローディング状態）を取得します。
-  const { user, customUser, loading } = useAuth();
+  const { user, customUser, loading, updateNickname } = useAuth();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [openNicknameDialog, setOpenNicknameDialog] = useState(false);
 
-  /**
-   * @function handleLogin
-   * @description Googleログイン処理を開始します。
-   * FirebaseのGoogleAuthProviderを使用し、リダイレクト方式でログイン画面に遷移させます。
-   */
   const handleLogin = async () => {
-    // Firebase Authが設定されていない場合は、エラーメッセージをコンソールに出力して処理を中断します。
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') return;
+
     if (!auth) {
       console.error("Firebase Auth is not configured.");
       return;
     }
-    // Google認証のプロバイダーインスタンスを作成します。
     const provider = new GoogleAuthProvider();
     try {
-      // signInWithRedirectを実行すると、Googleのログインページにリダイレクトされます。
-      // ログインが成功すると、アプリケーションにリダイレクトされ直し、AuthContextのonAuthStateChangedが検知します。
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Error signing in: ", error);
     }
   };
 
-  /**
-   * @function handleLogout
-   * @description ログアウト処理を実行します。
-   */
   const handleLogout = async () => {
-    // Firebase Authが設定されていない場合は、エラーメッセージをコンソールに出力して処理を中断します。
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+        window.location.reload();
+        return;
+    }
+
     if (!auth) {
       console.error("Firebase Auth is not configured.");
       return;
     }
     try {
-      // signOutを実行すると、Firebaseの認証情報がクリアされ、onAuthStateChangedが検知します。
       await signOut(auth);
     } catch (error) {
       console.error("Error signing out: ", error);
     }
   };
 
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleEditNickname = () => {
+    handleClose();
+    setOpenNicknameDialog(true);
+  };
+
+  const handleSaveNickname = async (newNickname?: string) => {
+    setOpenNicknameDialog(false);
+    if (newNickname) {
+      await updateNickname(newNickname);
+    }
+  };
+
   return (
-    // AppBarはMUIのコンポーネントで、ヘッダーの基本的なレイアウトを提供します。
     <AppBar position="static">
       <Toolbar>
-        {/* アプリケーションのタイトル */}
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           HARIDICE Next
         </Typography>
 
-        {/* 認証状態に応じたUIの表示切り替え */}
         <Box>
-          {/* loadingがtrueの場合（認証状態を確認中）は、スピナーを表示します。 */}
           {loading ? (
             <CircularProgress color="inherit" size={24} />
-
-          // userオブジェクトが存在する場合（ログイン済み）
           ) : user ? (
             <>
-              {/* ユーザー名を表示します。ニックネームがあればそれを、なければGoogleアカウントの表示名を使います。 */}
-              <Typography component="span" sx={{ marginRight: 2 }}>
-                Welcome, {customUser?.nickname || user.displayName}
-              </Typography>
-              {/* ログアウトボタン */}
-              <Button color="inherit" onClick={handleLogout}>
-                Logout
+              <Button
+                color="inherit"
+                onClick={handleMenu}
+                startIcon={<AccountCircle />}
+              >
+                {customUser?.nickname || user.displayName}
               </Button>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem onClick={handleEditNickname}>ニックネームを編集</MenuItem>
+                <MenuItem onClick={handleLogout}>ログアウト</MenuItem>
+              </Menu>
             </>
-
-          // userオブジェクトが存在しない場合（未ログイン）
           ) : (
-            // ログインボタン
             <Button color="inherit" onClick={handleLogin}>
               Login with Google
             </Button>
           )}
         </Box>
       </Toolbar>
+      <EditNicknameDialog
+        open={openNicknameDialog}
+        onClose={handleSaveNickname}
+        currentNickname={customUser?.nickname || null}
+      />
     </AppBar>
   );
 }

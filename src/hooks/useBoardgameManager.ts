@@ -40,6 +40,11 @@ export const useBoardgameManager = (): UseBoardgameManagerReturn => {
    * @param {Omit<IBoardGameData, 'id'>} gameData - 追加するボードゲームのデータ（IDはFirestoreが自動採番）。
    */
   const addBoardgame = async (gameData: Omit<IBoardGameData, 'id'>) => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      console.log('Mock: addBoardgame', gameData);
+      return;
+    }
+
     // DB接続がない場合はエラー
     if (!db) {
       setError(new Error("データベース接続に失敗しました。"));
@@ -66,6 +71,11 @@ export const useBoardgameManager = (): UseBoardgameManagerReturn => {
    * @param {Partial<IBoardGameData>} gameData - 更新するデータ。Partial型なので、一部のフィールドのみでも可。
    */
   const updateBoardgame = async (gameId: string, gameData: Partial<IBoardGameData>) => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      console.log('Mock: updateBoardgame', gameId, gameData);
+      return;
+    }
+
     if (!db) {
       setError(new Error("データベース接続に失敗しました。"));
       return;
@@ -92,6 +102,11 @@ export const useBoardgameManager = (): UseBoardgameManagerReturn => {
    * @param {string} gameId - 削除対象のボードゲームのドキュメントID。
    */
   const deleteBoardgame = async (gameId: string) => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      console.log('Mock: deleteBoardgame', gameId);
+      return;
+    }
+
     if (!db) {
       setError(new Error("データベース接続に失敗しました。"));
       return;
@@ -120,6 +135,11 @@ export const useBoardgameManager = (): UseBoardgameManagerReturn => {
    * @param {IBoardGameUser} evaluationData - 評価データ（played, evaluation, comment）。
    */
   const updateUserEvaluation = async (userId: string, boardGameId: string, evaluationData: IBoardGameUser) => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      console.log('Mock: updateUserEvaluation', userId, boardGameId, evaluationData);
+      return;
+    }
+
     if (!db) {
       setError(new Error("データベース接続に失敗しました。"));
       return;

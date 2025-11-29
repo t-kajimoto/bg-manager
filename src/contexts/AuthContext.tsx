@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
+import { MOCK_USER } from '@/lib/mock/data';
 
 /**
  * @interface ICustomUser
@@ -27,6 +28,7 @@ interface AuthContextType {
   user: User | null;
   customUser: ICustomUser | null;
   loading: boolean;
+  updateNickname: (nickname: string) => Promise<void>;
 }
 
 /**
@@ -37,6 +39,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   customUser: null,
   loading: true,
+  updateNickname: async () => {},
 });
 
 /**
@@ -56,6 +59,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 副作用フックを使用して、コンポーネントのマウント時に一度だけ認証状態の監視を開始します。
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      console.log('Using Mock User');
+      setUser({
+        uid: MOCK_USER.uid,
+        displayName: MOCK_USER.displayName,
+        email: MOCK_USER.email,
+        photoURL: MOCK_USER.photoURL,
+      } as User);
+      setCustomUser({
+        nickname: MOCK_USER.nickname || "",
+        isAdmin: MOCK_USER.isAdmin || false,
+      });
+      setLoading(false);
+      return;
+    }
+
     // Firebaseの設定が読み込めなかった場合（環境変数が未設定など）は、何もせずに処理を中断します。
     if (!auth) {
       setLoading(false);
@@ -91,8 +110,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []); // 空の依存配列は、このuseEffectがマウント時に一度だけ実行されることを意味します。
 
+  const updateNickname = async (nickname: string) => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      setCustomUser(prev => prev ? { ...prev, nickname } : null);
+      return;
+    }
+
+    if (user && db) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, { nickname }, { merge: true });
+        setCustomUser(prev => prev ? { ...prev, nickname } : { nickname, isAdmin: false });
+      } catch (error) {
+        console.error("Error updating nickname:", error);
+      }
+    }
+  };
+
   // Contextに渡す値
-  const value = { user, customUser, loading };
+  const value = { user, customUser, loading, updateNickname };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
