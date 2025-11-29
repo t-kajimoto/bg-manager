@@ -1,5 +1,5 @@
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import Home from './page';
 import { useBoardgames } from '@/hooks/useBoardgames';
 import { IBoardGame } from '@/types/boardgame';
@@ -157,5 +157,45 @@ describe('Home Page', () => {
     // getAllByTextで複数の要素を取得して、存在を確認
     expect(screen.getAllByText('あなたの評価').length).toBeGreaterThan(0);
     expect(screen.getAllByText('平均評価').length).toBeGreaterThan(0);
+  });
+
+  // ------------------------------------------------------------------------------------------
+  // テストケース5: 検索機能
+  // ------------------------------------------------------------------------------------------
+  it('検索ボックスに入力するとリストがフィルタリングされること', () => {
+    mockUseBoardgames.mockReturnValue({
+      boardGames: mockBoardGames,
+      loading: false,
+      error: null,
+    });
+    render(<Home />);
+
+    // 初期状態は2件
+    expect(screen.getByText('カタン')).toBeInTheDocument();
+    expect(screen.getByText('コードネーム')).toBeInTheDocument();
+
+    // 検索入力
+    const searchInput = screen.getByLabelText('検索');
+    fireEvent.change(searchInput, { target: { value: 'カタン' } });
+
+    // カタンのみ表示
+    expect(screen.getByText('カタン')).toBeInTheDocument();
+    expect(screen.queryByText('コードネーム')).not.toBeInTheDocument();
+  });
+
+  // ------------------------------------------------------------------------------------------
+  // テストケース6: ガチャ機能
+  // ------------------------------------------------------------------------------------------
+  it('ガチャボタンをクリックするとダイアログが開くこと', () => {
+    mockUseBoardgames.mockReturnValue({
+      boardGames: mockBoardGames,
+      loading: false,
+      error: null,
+    });
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'ガチャ' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('ボドゲガチャ')).toBeInTheDocument();
   });
 });
