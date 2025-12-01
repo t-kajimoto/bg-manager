@@ -3,7 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useBoardgames } from './useBoardgames';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
-import { IBoardGameData, IBoardGameUserFirestore, IUser } from '@/types/boardgame';
+import { IBoardGameData, IBoardGameUserFirestore } from '@/features/boardgames/types';
+import { IUser } from '@/features/auth/types';
 import { ReactNode } from 'react';
 
 // Firebase configをモック化し、テスト用のダミーdb/authオブジェクトを使わせる

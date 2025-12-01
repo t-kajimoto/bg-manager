@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase/config';
 import { collection, onSnapshot, query, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
-import { IBoardGame, IBoardGameData, IBoardGameUserFirestore } from '@/types/boardgame';
+import { IBoardGame, IBoardGameData, IBoardGameUserFirestore } from '@/features/boardgames/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { MOCK_BOARDGAMES } from '@/lib/mock/data';
 

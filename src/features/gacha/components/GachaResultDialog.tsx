@@ -9,7 +9,7 @@ import {
   Rating,
   Chip
 } from '@mui/material';
-import { IBoardGame } from '@/types/boardgame';
+import { IBoardGame } from '@/features/boardgames/types';
 import PeopleIcon from '@mui/icons-material/People';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CasinoIcon from '@mui/icons-material/Casino';

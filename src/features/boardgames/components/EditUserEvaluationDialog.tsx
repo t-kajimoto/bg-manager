@@ -4,8 +4,8 @@
 import { useEffect } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress, Rating, Box } from '@mui/material';
-import { IBoardGame, IBoardGameUser } from '@/types/boardgame';
-import { useBoardgameManager } from '@/hooks/useBoardgameManager';
+import { IBoardGame, IBoardGameUser } from '@/features/boardgames/types';
+import { useBoardgameManager } from '@/features/boardgames/hooks/useBoardgameManager';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface EditUserEvaluationDialogProps {

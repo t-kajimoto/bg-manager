@@ -1,9 +1,9 @@
 
 import { render, screen } from '@testing-library/react';
 import { EditBoardgameDialog } from './EditBoardgameDialog';
-import { IBoardGame } from '@/types/boardgame';
+import { IBoardGame } from '@/features/boardgames/types';
 
-jest.mock('@/hooks/useBoardgameManager', () => ({
+jest.mock('@/features/boardgames/hooks/useBoardgameManager', () => ({
   useBoardgameManager: () => ({
     updateBoardgame: jest.fn(),
     loading: false,

@@ -6,7 +6,7 @@ import { GoogleAuthProvider, signInWithRedirect, signOut } from 'firebase/auth';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/contexts/AuthContext';
-import { EditNicknameDialog } from '@/components/EditNicknameDialog';
+import { EditNicknameDialog } from '@/features/auth/components/EditNicknameDialog';
 
 export default function Header() {
   const { user, customUser, loading, updateNickname } = useAuth();

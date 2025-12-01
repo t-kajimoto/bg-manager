@@ -1,8 +1,8 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import Home from './page';
-import { useBoardgames } from '@/hooks/useBoardgames';
-import { IBoardGame } from '@/types/boardgame';
+import { useBoardgames } from '@/features/boardgames/hooks/useBoardgames';
+import { IBoardGame } from '@/features/boardgames/types';
 
 // ==========================================================================================
 // テスト用のモック設定
@@ -11,7 +11,7 @@ import { IBoardGame } from '@/types/boardgame';
 // useBoardgamesフックをモック化します。
 // これにより、実際のフックのロジック（Firestoreへのアクセスなど）を実行せず、
 // テストケースごとに都合の良い値を返させることができます。
-jest.mock('@/hooks/useBoardgames');
+jest.mock('@/features/boardgames/hooks/useBoardgames');
 
 // Headerコンポーネントをモック化します。
 // Homeページのテストでは、Headerコンポーネント自体の動作は関心の対象外なので、
