@@ -45,3 +45,5 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BG_MANAGER }}'
           channelId: live
           projectId: bg-manager-cc1fa
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
