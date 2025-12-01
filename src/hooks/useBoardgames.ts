@@ -4,6 +4,7 @@ import { db } from '@/lib/firebase/config';
 import { collection, onSnapshot, query, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { IBoardGame, IBoardGameData, IBoardGameUserFirestore } from '@/types/boardgame';
 import { useAuth } from '@/contexts/AuthContext';
+import { MOCK_BOARDGAMES } from '@/lib/mock/data';
 
 /**
  * @interface UseBoardgamesReturn
@@ -32,6 +33,13 @@ export const useBoardgames = (): UseBoardgamesReturn => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      console.log('Using Mock Data for Boardgames');
+      setBoardGames(MOCK_BOARDGAMES);
+      setLoading(false);
+      return;
+    }
+
     if (!db) {
       setError(new Error("データベース接続に失敗しました。"));
       setLoading(false);
