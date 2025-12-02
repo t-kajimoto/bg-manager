@@ -24,7 +24,7 @@ interface ICustomUser {
  * @property {ICustomUser | null} customUser - Firestoreから取得したカスタムユーザー情報。未ログイン時や情報がない場合はnull。
  * @property {boolean} loading - 認証状態をチェックしている最中かどうかを示すフラグ。trueの間はスピナーなどを表示するのに使えます。
  */
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   customUser: ICustomUser | null;
   loading: boolean;

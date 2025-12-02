@@ -1,7 +1,7 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EditUserEvaluationDialog } from './EditUserEvaluationDialog';
-import { IBoardGame } from '@/types/boardgame';
+import { IBoardGame } from '@/features/boardgames/types';
 
 // useAuthフックをモック化
 jest.mock('@/contexts/AuthContext', () => ({
@@ -12,7 +12,7 @@ jest.mock('@/contexts/AuthContext', () => ({
 
 // useBoardgameManagerフックをモック化
 const mockUpdateUserEvaluation = jest.fn();
-jest.mock('@/hooks/useBoardgameManager', () => ({
+jest.mock('@/features/boardgames/hooks/useBoardgameManager', () => ({
   useBoardgameManager: () => ({
     updateUserEvaluation: mockUpdateUserEvaluation,
     loading: false,

@@ -3,8 +3,8 @@
 
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress } from '@mui/material';
-import { IBoardGameData } from '@/types/boardgame';
-import { useBoardgameManager } from '@/hooks/useBoardgameManager';
+import { IBoardGameData } from '@/features/boardgames/types';
+import { useBoardgameManager } from '@/features/boardgames/hooks/useBoardgameManager';
 
 /**
  * @interface AddBoardgameDialogProps

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GachaResultDialog } from './GachaResultDialog';
-import { IBoardGame } from '@/types/boardgame';
+import { IBoardGame } from '@/features/boardgames/types';
 import '@testing-library/jest-dom';
 
 describe('GachaResultDialog', () => {

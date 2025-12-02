@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { AddBoardgameDialog } from './AddBoardgameDialog';
 
 // useBoardgameManagerフックをモック化
-jest.mock('@/hooks/useBoardgameManager', () => ({
+jest.mock('@/features/boardgames/hooks/useBoardgameManager', () => ({
   useBoardgameManager: () => ({
     addBoardgame: jest.fn(),
     loading: false,

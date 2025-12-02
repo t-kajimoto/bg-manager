@@ -4,8 +4,8 @@
 import { useEffect } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress } from '@mui/material';
-import { IBoardGame, IBoardGameData } from '@/types/boardgame';
-import { useBoardgameManager } from '@/hooks/useBoardgameManager';
+import { useBoardgameManager } from '@/features/boardgames/hooks/useBoardgameManager';
+import { IBoardGame, IBoardGameData } from '@/features/boardgames/types';
 
 interface EditBoardgameDialogProps {
   open: boolean;

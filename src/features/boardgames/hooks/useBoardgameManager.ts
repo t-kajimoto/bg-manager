@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { db } from '@/lib/firebase/config';
 import { collection, addDoc, updateDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
-import { IBoardGameData, IBoardGameUser } from '@/types/boardgame';
+import { IBoardGameData, IBoardGameUser } from '@/features/boardgames/types';
 
 // useBoardgameManagerフックが返す関数の型定義
 type BoardgameManagerFunctions = {

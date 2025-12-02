@@ -1,4 +1,5 @@
-import { IBoardGame, IUser } from "@/types/boardgame";
+import { IBoardGame } from "@/features/boardgames/types";
+import { IUser } from "@/features/auth/types";
 
 export const MOCK_USER: IUser = {
   uid: "mock-user-id",
