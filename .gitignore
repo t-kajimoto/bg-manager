@@ -42,3 +42,5 @@ next-env.d.ts
 
 # artifacts
 screenshots/
+test-results/
+playwright-report/
