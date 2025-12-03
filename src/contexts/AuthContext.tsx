@@ -107,6 +107,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // ドキュメントが存在すれば、そのデータをカスタムユーザー情報のstateにセットします。
         if (userDoc.exists()) {
           setCustomUser(userDoc.data() as ICustomUser);
+        } else {
+          // ドキュメントが存在しない場合（初回ログイン時など）は、新規作成します。
+          const newUser: ICustomUser = {
+            nickname: user.displayName || 'No Name',
+            isAdmin: false,
+          };
+          try {
+            await setDoc(userDocRef, newUser);
+            setCustomUser(newUser);
+          } catch (error) {
+            console.error("Error creating user document:", error);
+          }
         }
       } else {
         // ユーザーがログアウトしている場合、すべてのユーザー情報をnullにリセットします。
