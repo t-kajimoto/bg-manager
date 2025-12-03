@@ -7,7 +7,9 @@ import {
   Typography,
   Box,
   Rating,
-  Chip
+  Chip,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { IBoardGame } from '@/features/boardgames/types';
 import PeopleIcon from '@mui/icons-material/People';
@@ -21,6 +23,9 @@ interface GachaResultDialogProps {
 }
 
 export const GachaResultDialog = ({ open, onClose, game }: GachaResultDialogProps) => {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
+
   if (!game) return null;
 
   return (
@@ -29,6 +34,7 @@ export const GachaResultDialog = ({ open, onClose, game }: GachaResultDialogProp
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={fullScreen}
       PaperProps={{
         sx: {
           textAlign: 'center',

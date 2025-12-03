@@ -2,7 +2,7 @@
 'use client';
 
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
-import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress } from '@mui/material';
+import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress, useTheme, useMediaQuery } from '@mui/material';
 import { IBoardGameData } from '@/features/boardgames/types';
 import { useBoardgameManager } from '@/features/boardgames/hooks/useBoardgameManager';
 
@@ -25,6 +25,8 @@ type BoardGameFormInput = Omit<IBoardGameData, 'id'>;
  * @description 新しいボードゲームを追加するためのフォームを持つダイアログコンポーネント。
  */
 export const AddBoardgameDialog = ({ open, onClose }: AddBoardgameDialogProps) => {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   // ボードゲーム管理フックを呼び出し
   const { addBoardgame, loading, error } = useBoardgameManager();
 
@@ -75,7 +77,7 @@ export const AddBoardgameDialog = ({ open, onClose }: AddBoardgameDialogProps) =
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
       <DialogTitle>新しいボードゲームを追加</DialogTitle>
       {/* handleSubmitでフォームの送信処理をラップ */}
       <form onSubmit={handleSubmit(handleFormSubmit)}>

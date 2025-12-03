@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
-import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress } from '@mui/material';
+import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress, useTheme, useMediaQuery } from '@mui/material';
 import { useBoardgameManager } from '@/features/boardgames/hooks/useBoardgameManager';
 import { IBoardGame, IBoardGameData } from '@/features/boardgames/types';
 
@@ -20,6 +20,8 @@ type BoardGameFormInput = Omit<IBoardGameData, 'id'>;
  * @description 既存のボードゲーム情報を編集するためのフォームを持つダイアログ。
  */
 export const EditBoardgameDialog = ({ open, onClose, game }: EditBoardgameDialogProps) => {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const { updateBoardgame, loading, error } = useBoardgameManager();
   const { control, handleSubmit, reset, formState: { errors } } = useForm<BoardGameFormInput>();
 
@@ -54,7 +56,7 @@ export const EditBoardgameDialog = ({ open, onClose, game }: EditBoardgameDialog
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
       <DialogTitle>ボードゲーム情報を編集</DialogTitle>
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <DialogContent>

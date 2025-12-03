@@ -68,7 +68,7 @@ export default function Header() {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
           HARIDICE Next
         </Typography>
 
@@ -81,8 +81,17 @@ export default function Header() {
                 color="inherit"
                 onClick={handleMenu}
                 startIcon={<AccountCircle />}
+                sx={{
+                  textTransform: 'none',
+                  minWidth: 'auto',
+                  px: { xs: 1, sm: 2 },
+                  '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } },
+                  '& .MuiButton-startIcon > *:first-of-type': { fontSize: { xs: 24, sm: 20 } }
+                }}
               >
-                {customUser?.nickname || user.displayName}
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  {customUser?.nickname || user.displayName}
+                </Box>
               </Button>
               <Menu
                 anchorEl={anchorEl}
@@ -94,8 +103,11 @@ export default function Header() {
               </Menu>
             </>
           ) : (
-            <Button color="inherit" onClick={handleLogin}>
-              Login with Google
+            <Button color="inherit" onClick={handleLogin} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+              Login
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' }, ml: 0.5 }}>
+                 with Google
+              </Box>
             </Button>
           )}
         </Box>
