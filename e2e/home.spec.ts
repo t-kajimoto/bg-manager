@@ -40,7 +40,7 @@ test.describe('Home Page', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
-  test('should filter by tag', async ({ page }) => {
+  test('should filter by tag', async () => {
     // Placeholder for tag filtering test
     // Assuming implementation details might change or are complex
   });
