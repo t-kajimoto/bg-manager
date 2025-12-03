@@ -95,38 +95,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // onAuthStateChangedはFirebase Authの認証状態（ログイン、ログアウト）が変わるたびに呼び出されるリスナーを登録します。
     // 返り値のunsubscribe関数をクリーンアップ時に呼び出すことで、メモリリークを防ぎます。
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      // ユーザーがログインしている、かつFirestoreのDBインスタンスも利用可能な場合
-      if (user && db) {
-        // 取得したユーザー情報をstateにセットします。
-        setUser(user);
+      try {
+        // ユーザーがログインしている、かつFirestoreのDBインスタンスも利用可能な場合
+        if (user && db) {
+          // 取得したユーザー情報をstateにセットします。
+          setUser(user);
 
-        // Firestoreからこのユーザーに対応する追加情報を取得します。
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+          // Firestoreからこのユーザーに対応する追加情報を取得します。
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
 
-        // ドキュメントが存在すれば、そのデータをカスタムユーザー情報のstateにセットします。
-        if (userDoc.exists()) {
-          setCustomUser(userDoc.data() as ICustomUser);
-        } else {
-          // ドキュメントが存在しない場合（初回ログイン時など）は、新規作成します。
-          const newUser: ICustomUser = {
-            nickname: user.displayName || 'No Name',
-            isAdmin: false,
-          };
-          try {
+          // ドキュメントが存在すれば、そのデータをカスタムユーザー情報のstateにセットします。
+          if (userDoc.exists()) {
+            setCustomUser(userDoc.data() as ICustomUser);
+          } else {
+            // ドキュメントが存在しない場合（初回ログイン時など）は、新規作成します。
+            const newUser: ICustomUser = {
+              nickname: user.displayName || 'No Name',
+              isAdmin: false,
+            };
             await setDoc(userDocRef, newUser);
             setCustomUser(newUser);
-          } catch (error) {
-            console.error("Error creating user document:", error);
           }
+        } else {
+          // ユーザーがログアウトしている場合、すべてのユーザー情報をnullにリセットします。
+          setUser(null);
+          setCustomUser(null);
         }
-      } else {
-        // ユーザーがログアウトしている場合、すべてのユーザー情報をnullにリセットします。
+      } catch (error) {
+        console.error("Error in onAuthStateChanged:", error);
+        // エラー発生時はログアウト扱いにするなどの安全策をとる
         setUser(null);
         setCustomUser(null);
+      } finally {
+        // 認証状態のチェックが完了したので、ローディング状態をfalseにします。
+        setLoading(false);
       }
-      // 認証状態のチェックが完了したので、ローディング状態をfalseにします。
-      setLoading(false);
     });
 
     // コンポーネントがアンマウントされる際に、登録したリスナーを解除します。
