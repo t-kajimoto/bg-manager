@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase/config';
-import { collection, onSnapshot, query, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import { IBoardGame, IBoardGameData, IBoardGameUserFirestore } from '@/features/boardgames/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { MOCK_BOARDGAMES } from '@/lib/mock/data';
@@ -28,25 +28,32 @@ interface UseBoardgamesReturn {
  */
 export const useBoardgames = (): UseBoardgamesReturn => {
   const { user } = useAuth();
-  const [boardGames, setBoardGames] = useState<IBoardGame[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [boardGames, setBoardGames] = useState<IBoardGame[]>(() => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      return MOCK_BOARDGAMES;
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') return false;
+    return !!db;
+  });
+  const [error, setError] = useState<Error | null>(() => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK !== 'true' && !db) {
+      return new Error("データベース接続に失敗しました。");
+    }
+    return null;
+  });
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
       console.log('Using Mock Data for Boardgames');
-      setBoardGames(MOCK_BOARDGAMES);
-      setLoading(false);
       return;
     }
 
     if (!db) {
-      setError(new Error("データベース接続に失敗しました。"));
-      setLoading(false);
       return;
     }
-
-    setLoading(true);
 
     const qGames = query(collection(db, 'boardGames'));
 

@@ -67,7 +67,7 @@ export const BodogeGachaDialog = ({ open, onClose, allTags }: BodogeGachaDialogP
             <RadioGroup
               row
               value={playStatus}
-              onChange={(e) => setPlayStatus(e.target.value as any)}
+              onChange={(e) => setPlayStatus(e.target.value as 'played' | 'unplayed' | 'any')}
             >
               <FormControlLabel value="any" control={<Radio />} label="指定なし" />
               <FormControlLabel value="played" control={<Radio />} label="プレイ済" />
