@@ -1,30 +1,19 @@
-// jest.config.js
+/* eslint-disable @typescript-eslint/no-require-imports */
 const nextJest = require('next/jest')
 
-// next/jestを呼び出して、Next.js用のJest設定を作成します。
 const createJestConfig = nextJest({
-  // Next.jsアプリのルートディレクトリへのパスを提供します。
+  // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
   dir: './',
 })
 
-// Jestに渡すカスタム設定
+// Add any custom config to be passed to Jest
 const customJestConfig = {
-  // 各テストの前にセットアップするファイルを追加します。
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-
-  // テスト環境をjsdomに設定します。
   testEnvironment: 'jest-environment-jsdom',
-
-  // TypeScriptのパスエイリアス（例: @/components/*）をJestが解決できるように設定します。
   moduleNameMapper: {
-    // CSS/SCSSモジュールのインポートをモックします。
-    '\\.(css|scss)$': 'identity-obj-proxy',
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+}
 
-  // ts-jestプリセットを使用します。
-  preset: 'ts-jest',
-};
-
-// createJestConfigをエクスポートして、Next.jsがJestの設定をロードできるようにします。
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
 module.exports = createJestConfig(customJestConfig)
