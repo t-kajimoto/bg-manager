@@ -21,7 +21,7 @@ jobs:
 
       - name: Deploy Firestore Rules
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BG_MANAGER }}
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
             echo "Error: FIREBASE_SERVICE_ACCOUNT secret is not set."
