@@ -1,7 +1,7 @@
 
 import { renderHook, waitFor } from '@testing-library/react';
 import { useBoardgames } from './useBoardgames';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { onSnapshot } from 'firebase/firestore';
 import { AuthContext, AuthContextType } from '@/contexts/AuthContext';
 import { IBoardGameData, IBoardGameUserFirestore } from '@/features/boardgames/types';
 import { IUser } from '@/features/auth/types';
@@ -69,10 +69,10 @@ const mockUserGamesData: IBoardGameUserFirestore[] = [
 const createWrapper = (user: IUser | null) => {
   // AuthContextに渡すダミーの値
   const authContextValue: AuthContextType = {
-    user: user as any, // FirebaseのUser型とIUser型は異なるため、テストの簡便性のためにanyにキャスト
+    user: user as unknown as import('firebase/auth').User, // FirebaseのUser型とIUser型は異なるため、テストの簡便性のためにキャスト
     customUser: null, // 今回のテストではcustomUserは未使用
     loading: false,
-    error: null,
+    updateNickname: async () => {}, // ダミー関数を追加
   };
 
   // props.childrenをAuthContext.Providerでラップして返すコンポーネント

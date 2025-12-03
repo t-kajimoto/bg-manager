@@ -51,33 +51,44 @@ export const AuthContext = createContext<AuthContextType>({
  */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Firebaseのユーザー情報を保持するstate
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      return {
+        uid: MOCK_USER.uid,
+        displayName: MOCK_USER.displayName,
+        email: MOCK_USER.email,
+        photoURL: MOCK_USER.photoURL,
+      } as User;
+    }
+    return null;
+  });
+
   // Firestoreのカスタムユーザー情報を保持するstate
-  const [customUser, setCustomUser] = useState<ICustomUser | null>(null);
+  const [customUser, setCustomUser] = useState<ICustomUser | null>(() => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      return {
+        nickname: MOCK_USER.nickname || "",
+        isAdmin: MOCK_USER.isAdmin || false,
+      };
+    }
+    return null;
+  });
+
   // ローディング状態を保持するstate
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    // モックモードの場合は初期ロード完了済みとする
+    return process.env.NEXT_PUBLIC_USE_MOCK !== 'true';
+  });
 
   // 副作用フックを使用して、コンポーネントのマウント時に一度だけ認証状態の監視を開始します。
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
       console.log('Using Mock User');
-      setUser({
-        uid: MOCK_USER.uid,
-        displayName: MOCK_USER.displayName,
-        email: MOCK_USER.email,
-        photoURL: MOCK_USER.photoURL,
-      } as User);
-      setCustomUser({
-        nickname: MOCK_USER.nickname || "",
-        isAdmin: MOCK_USER.isAdmin || false,
-      });
-      setLoading(false);
       return;
     }
 
     // Firebaseの設定が読み込めなかった場合（環境変数が未設定など）は、何もせずに処理を中断します。
     if (!auth) {
-      setLoading(false);
       return;
     }
 
