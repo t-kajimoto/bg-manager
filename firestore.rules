@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 管理者ユーザーのリストを定義
+    // 必要に応じてUIDを追加してください
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in [
+        'nsPr7XWcyhhJMi9ipeS6GoU5g9A2'
+      ];
+    }
+
+    // 認証済みユーザーかどうかをチェック
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // ボードゲーム本体の情報を格納するコレクション (boardGames)
+    match /boardGames/{boardGameId} {
+      // 読み取り: ログインしていれば誰でも可能
+      allow read: if isAuth();
+
+      // 書き込み(作成/更新/削除): 管理者のみ可能
+      allow write: if isAdmin();
+    }
+
+    // ユーザーごとのプレイ状況や評価を格納するコレクション (userBoardGames)
+    match /userBoardGames/{userGameId} {
+      // 読み取り: ログインしていれば誰でも可能 (平均評価の計算などに必要)
+      allow read: if isAuth();
+
+      // 書き込み(作成/更新):
+      // userIdフィールドが自分のUIDと一致する場合のみ許可
+      // 削除は現状アプリ側で実装されていないため create, update のみに限定
+      allow create, update: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ユーザー情報を格納するコレクション (users)
+    match /users/{userId} {
+      // 読み取りはログインしていれば誰でも可能
+      allow read: if isAuth();
+      // 書き込みは本人のみ (パスのuserIdとauth.uidが一致)
+      allow write: if isAuth() && request.auth.uid == userId;
+    }
+  }
+}

@@ -1,0 +1,39 @@
+name: Deploy Firestore Rules
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'firestore.rules'
+      - 'firebase.json'
+      - '.github/workflows/deploy-firestore-rules.yml'
+
+jobs:
+  deploy_rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Firebase Tools
+        run: npm install -g firebase-tools
+
+      - name: Deploy Firestore Rules
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "Error: FIREBASE_SERVICE_ACCOUNT secret is not set."
+            exit 1
+          fi
+
+          # Create a temporary service account file
+          echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+
+          # Deploy using the service account
+          export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
+          firebase deploy --only firestore:rules --project bg-manager-cc1fa --json
+
+          # Clean up
+          rm service-account.json
