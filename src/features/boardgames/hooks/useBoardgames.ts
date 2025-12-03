@@ -52,6 +52,12 @@ export const useBoardgames = (): UseBoardgamesReturn => {
     }
 
     if (!db) {
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
+      setLoading(false);
       return;
     }
 
