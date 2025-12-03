@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, CircularProgress, Menu, MenuItem } from '@mui/material';
-import { GoogleAuthProvider, signInWithRedirect, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +22,7 @@ export default function Header() {
     }
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
     } catch (error) {
       console.error("Error signing in: ", error);
     }

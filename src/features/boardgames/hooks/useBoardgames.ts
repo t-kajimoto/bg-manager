@@ -36,7 +36,7 @@ export const useBoardgames = (): UseBoardgamesReturn => {
   });
   const [loading, setLoading] = useState<boolean>(() => {
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') return false;
-    return !!db;
+    return !!db && !!user;
   });
   const [error, setError] = useState<Error | null>(() => {
     if (process.env.NEXT_PUBLIC_USE_MOCK !== 'true' && !db) {
@@ -55,9 +55,23 @@ export const useBoardgames = (): UseBoardgamesReturn => {
       return;
     }
 
+    // ユーザーがいない場合は、データ取得を行わず、クリーンアップでクリアされる
+    if (!user) {
+      return;
+    }
+
+    // 非同期で実行してlintエラーを回避
+    const timer = setTimeout(() => setLoading(true), 0);
+
+    let unsubscribeUserGames: (() => void) | undefined;
     const qGames = query(collection(db, 'boardGames'));
 
     const unsubscribeGames = onSnapshot(qGames, (querySnapshot) => {
+      // 以前のuserBoardGamesリスナーがあれば解除
+      if (unsubscribeUserGames) {
+        unsubscribeUserGames();
+      }
+
       const gamesData: IBoardGameData[] = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -72,7 +86,7 @@ export const useBoardgames = (): UseBoardgamesReturn => {
 
       const qUserGames = query(collection(db, 'userBoardGames'));
 
-      const unsubscribeUserGames = onSnapshot(qUserGames, (userQuerySnapshot) => {
+      unsubscribeUserGames = onSnapshot(qUserGames, (userQuerySnapshot) => {
         const userGamesData: IBoardGameUserFirestore[] = userQuerySnapshot.docs.map(doc =>
           doc.data() as IBoardGameUserFirestore
         );
@@ -107,14 +121,24 @@ export const useBoardgames = (): UseBoardgamesReturn => {
         setLoading(false);
       });
 
-      return () => unsubscribeUserGames();
     }, (err) => {
       console.error("Error fetching board games:", err);
       setError(err);
       setLoading(false);
     });
 
-    return () => unsubscribeGames();
+    return () => {
+      // クリーンアップ関数
+      clearTimeout(timer);
+      if (unsubscribeUserGames) {
+        unsubscribeUserGames();
+      }
+      unsubscribeGames();
+
+      // ユーザーログアウト時やコンポーネントアンマウント時にデータをクリア
+      setBoardGames([]);
+      setLoading(false);
+    };
   }, [user]);
 
   return { boardGames, loading, error };

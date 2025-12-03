@@ -8,7 +8,10 @@ import { IUser } from '@/features/auth/types';
 import { ReactNode } from 'react';
 
 // Firebase configをモック化し、テスト用のダミーdb/authオブジェクトを使わせる
-jest.mock('@/lib/firebase/config');
+jest.mock('@/lib/firebase/config', () => ({
+  db: {}, // dbをtruthyな値としてモック化
+  auth: {},
+}));
 
 // ==========================================================================================
 // テスト用のモック設定
@@ -142,36 +145,21 @@ describe('useBoardgames', () => {
   });
 
   // ------------------------------------------------------------------------------------------
-  // テストケース2: データ取得成功時 (未ログイン状態)
+  // テストケース2: 未ログイン時の挙動テスト
   // ------------------------------------------------------------------------------------------
-  it('ログインしていない場合、個人データは初期値のまま、全体のデータは正しく計算されること', async () => {
-    // onSnapshotのモック実装 (テストケース1と同様)
-    mockOnSnapshot
-      .mockImplementationOnce((query, callback) => {
-        callback({ docs: mockGamesData.map(game => ({ id: game.id, data: () => game })) });
-        return jest.fn();
-      })
-      .mockImplementationOnce((query, callback) => {
-        callback({ docs: mockUserGamesData.map(ug => ({ data: () => ug })) });
-        return jest.fn();
-      });
+  it('ログインしていない場合、データ取得は行われず、ボードゲームリストは空であること', async () => {
+    // onSnapshotは呼ばれないはずだが、念のため空実装をセット
+    mockOnSnapshot.mockImplementation(() => jest.fn());
 
     // 未ログイン状態 (currentUser: null) のWrapperでフックをレンダリング
     const { result } = renderHook(() => useBoardgames(), { wrapper: createWrapper(null) });
 
     await waitFor(() => {
+      // 未ログインの場合、データ取得処理はスキップされるため、ローディングはfalseになる
       expect(result.current.loading).toBe(false);
-      expect(result.current.boardGames).toHaveLength(2);
+      // データは取得されないため、配列は空であること
+      expect(result.current.boardGames).toHaveLength(0);
     });
-
-    // --- Game A のデータ検証 ---
-    const gameA = result.current.boardGames.find(g => g.id === 'game1');
-    // 未ログインなので、個人の評価は初期値になる
-    expect(gameA?.played).toBe(false);
-    expect(gameA?.evaluation).toBe(0);
-    expect(gameA?.comment).toBe('');
-    // 全体の平均評価はログイン状態に関わらず計算される
-    expect(gameA?.averageEvaluation).toBe(4);
   });
 
   // ------------------------------------------------------------------------------------------
