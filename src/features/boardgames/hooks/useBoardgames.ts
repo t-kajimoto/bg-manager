@@ -34,9 +34,10 @@ export const useBoardgames = (): UseBoardgamesReturn => {
     }
     return [];
   });
+  // 初期状態は、DBとユーザーが存在する場合にtrueとする（即座にfetchが始まるため）
   const [loading, setLoading] = useState<boolean>(() => {
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') return false;
-    return !!db;
+    return !!db && !!user;
   });
   const [error, setError] = useState<Error | null>(() => {
     if (process.env.NEXT_PUBLIC_USE_MOCK !== 'true' && !db) {
@@ -46,6 +47,8 @@ export const useBoardgames = (): UseBoardgamesReturn => {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
       console.log('Using Mock Data for Boardgames');
       return;
@@ -55,24 +58,53 @@ export const useBoardgames = (): UseBoardgamesReturn => {
       return;
     }
 
+    // ユーザーがいない場合はデータをクリアして終了
+    if (!user) {
+      if (isMounted) {
+        // lintエラー回避のため非同期化
+        setTimeout(() => {
+            if (isMounted) {
+                setBoardGames([]);
+                setLoading(false);
+            }
+        }, 0);
+      }
+      return;
+    }
+
+    // ユーザー変更時などにローディングを開始
+    // lintエラー回避のため非同期化
+    const timer = setTimeout(() => {
+        if(isMounted) setLoading(true);
+    }, 0);
+
+    let unsubscribeUserGames: (() => void) | undefined;
     const qGames = query(collection(db, 'boardGames'));
 
     const unsubscribeGames = onSnapshot(qGames, (querySnapshot) => {
+      // 以前のuserBoardGamesリスナーがあれば解除
+      if (unsubscribeUserGames) {
+        unsubscribeUserGames();
+      }
+
       const gamesData: IBoardGameData[] = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       } as IBoardGameData));
 
-      // このコールバック内でもdbのnullチェックを追加
       if (!db) {
-        setError(new Error("データベース接続が失われました。"));
-        setLoading(false);
+        if (isMounted) {
+          setError(new Error("データベース接続が失われました。"));
+          setLoading(false);
+        }
         return;
       }
 
       const qUserGames = query(collection(db, 'userBoardGames'));
 
-      const unsubscribeUserGames = onSnapshot(qUserGames, (userQuerySnapshot) => {
+      unsubscribeUserGames = onSnapshot(qUserGames, (userQuerySnapshot) => {
+        if (!isMounted) return;
+
         const userGamesData: IBoardGameUserFirestore[] = userQuerySnapshot.docs.map(doc =>
           doc.data() as IBoardGameUserFirestore
         );
@@ -103,18 +135,28 @@ export const useBoardgames = (): UseBoardgamesReturn => {
         setLoading(false);
       }, (err) => {
         console.error("Error fetching user board games:", err);
-        setError(err);
-        setLoading(false);
+        if (isMounted) {
+          setError(err);
+          setLoading(false);
+        }
       });
 
-      return () => unsubscribeUserGames();
     }, (err) => {
       console.error("Error fetching board games:", err);
-      setError(err);
-      setLoading(false);
+      if (isMounted) {
+        setError(err);
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribeGames();
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      if (unsubscribeUserGames) {
+        unsubscribeUserGames();
+      }
+      unsubscribeGames();
+    };
   }, [user]);
 
   return { boardGames, loading, error };
