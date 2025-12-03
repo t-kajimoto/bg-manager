@@ -25,7 +25,7 @@ export const BoardGameFilter = ({
 }: BoardGameFilterProps) => {
   return (
     <Box sx={{ mb: 3 }}>
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: 'stretch' }}>
         <TextField
           label="検索"
           variant="outlined"
@@ -54,7 +54,7 @@ export const BoardGameFilter = ({
           value={sortBy}
           onChange={(e) => onSortChange(e.target.value)}
           size="small"
-          sx={{ minWidth: 120 }}
+          sx={{ minWidth: { xs: '100%', sm: 120 } }}
         >
           <MenuItem value="name">名前順</MenuItem>
           <MenuItem value="time">時間順</MenuItem>
