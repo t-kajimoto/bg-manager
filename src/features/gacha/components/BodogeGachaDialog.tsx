@@ -15,7 +15,9 @@ import {
   Box,
   Typography,
   FormControl,
-  FormLabel
+  FormLabel,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 
 export interface GachaCondition {
@@ -33,6 +35,8 @@ interface BodogeGachaDialogProps {
 }
 
 export const BodogeGachaDialog = ({ open, onClose, allTags }: BodogeGachaDialogProps) => {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const [players, setPlayers] = useState<number | null>(null);
   const [playStatus, setPlayStatus] = useState<'played' | 'unplayed' | 'any'>('any');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -50,7 +54,13 @@ export const BodogeGachaDialog = ({ open, onClose, allTags }: BodogeGachaDialogP
   };
 
   return (
-    <Dialog open={open} onClose={() => onClose()} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={() => onClose()}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={fullScreen}
+    >
       <DialogTitle>ボドゲガチャ</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>

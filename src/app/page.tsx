@@ -36,15 +36,24 @@ export default function Home() {
     <Box>
       <Header />
       <Container component="main" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
-          <Typography variant="h4" component="h1">
+        <Box sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          mb: 2,
+          gap: 2
+        }}>
+          <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' }, textAlign: { xs: 'center', sm: 'left' } }}>
             ボードゲーム一覧
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: { xs: 'center', sm: 'flex-end' } }}>
              <Button
               variant="outlined"
               startIcon={<CasinoIcon />}
               onClick={() => dialogState.setOpenGachaDialog(true)}
+              fullWidth={true}
+              sx={{ flex: { xs: 1, sm: 'none' } }}
             >
               ガチャ
             </Button>
@@ -53,6 +62,8 @@ export default function Home() {
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={() => dialogState.setOpenAddDialog(true)}
+                fullWidth={true}
+                sx={{ flex: { xs: 1, sm: 'none' } }}
               >
                 追加
               </Button>
