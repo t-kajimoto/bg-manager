@@ -4,8 +4,8 @@ import ThemeRegistry from './ThemeRegistry';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
-  title: "HARIDICE Next",
-  description: "Board game management app built with Next.js",
+  title: "HARIDICE",
+  description: "Board game management app",
 };
 
 export default function RootLayout({
