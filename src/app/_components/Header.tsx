@@ -69,7 +69,7 @@ export default function Header() {
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
-          HARIDICE Next
+          HARIDICE
         </Typography>
 
         <Box>
