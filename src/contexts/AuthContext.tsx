@@ -11,10 +11,16 @@ import { MOCK_USER } from '@/lib/mock/data';
  * @description Firestoreに保存されている、アプリケーション独自のユーザー情報の型定義です。
  * @property {string} nickname - ユーザーが設定したニックネーム。
  * @property {boolean} isAdmin - ユーザーが管理者権限を持つかどうかを示すフラグ。
+ * @property {string} [displayName] - Firebase Authenticationから取得した表示名。
+ * @property {string} [email] - Firebase Authenticationから取得したメールアドレス。
+ * @property {string} [photoURL] - Firebase Authenticationから取得したプロフィール画像のURL。
  */
 interface ICustomUser {
   nickname: string;
   isAdmin: boolean;
+  displayName?: string;
+  email?: string;
+  photoURL?: string;
 }
 
 /**
@@ -23,6 +29,7 @@ interface ICustomUser {
  * @property {User | null} user - Firebase Authenticationから提供されるユーザーオブジェクト。未ログイン時はnull。
  * @property {ICustomUser | null} customUser - Firestoreから取得したカスタムユーザー情報。未ログイン時や情報がない場合はnull。
  * @property {boolean} loading - 認証状態をチェックしている最中かどうかを示すフラグ。trueの間はスピナーなどを表示するのに使えます。
+ * @property {(nickname: string) => Promise<void>} updateNickname - ニックネームを更新する関数。
  */
 export interface AuthContextType {
   user: User | null;
@@ -113,6 +120,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const newUser: ICustomUser = {
               nickname: user.displayName || 'No Name',
               isAdmin: false,
+              displayName: user.displayName || '',
+              email: user.email || '',
+              photoURL: user.photoURL || '',
             };
             await setDoc(userDocRef, newUser);
             setCustomUser(newUser);
@@ -147,7 +157,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const userRef = doc(db, 'users', user.uid);
         await setDoc(userRef, { nickname }, { merge: true });
-        setCustomUser(prev => prev ? { ...prev, nickname } : { nickname, isAdmin: false });
+        setCustomUser(prev => prev ? { ...prev, nickname } : {
+          nickname,
+          isAdmin: false
+        });
       } catch (error) {
         console.error("Error updating nickname:", error);
       }

@@ -1,10 +1,12 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 import { ReactNode } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { getDoc, setDoc, doc } from 'firebase/firestore';
 
 // Mock firebase config
 jest.mock('@/lib/firebase/config', () => ({
-  auth: {},
+  auth: { currentUser: null },
   db: {},
 }));
 
@@ -28,6 +30,7 @@ describe('AuthContext', () => {
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...originalEnv };
+    jest.clearAllMocks();
   });
 
   afterAll(() => {
@@ -77,8 +80,55 @@ describe('AuthContext', () => {
     expect(result.current.customUser?.nickname).toBe('NewNick');
   });
 
-  // Note: Testing Firebase mode requires more extensive mocking of onAuthStateChanged
-  // which is complex. Since the user asked for "sufficient" tests for CICD,
-  // and we rely on mock mode for E2E, ensuring mock mode works in AuthContext is crucial.
-  // Real Firebase interaction is better tested via integration tests or relying on Firebase SDK guarantees.
+  test('should create new user with profile fields in Firestore when document does not exist (Firebase mode)', async () => {
+    process.env.NEXT_PUBLIC_USE_MOCK = 'false';
+    const mockUser = {
+      uid: 'test-uid',
+      displayName: 'Test User',
+      email: 'test@example.com',
+      photoURL: 'https://example.com/photo.jpg',
+    };
+
+    (onAuthStateChanged as jest.Mock).mockImplementation((auth, callback) => {
+      callback(mockUser);
+      return jest.fn();
+    });
+
+    (doc as jest.Mock).mockReturnValue('mock-doc-ref');
+
+    // getDoc returns { exists: () => false } to simulate new user
+    (getDoc as jest.Mock).mockResolvedValue({
+      exists: () => false,
+      data: () => undefined,
+    });
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AuthProvider>{children}</AuthProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.user).toEqual(mockUser);
+
+    // Verify setDoc was called with correct data including new fields
+    expect(setDoc).toHaveBeenCalledWith('mock-doc-ref', {
+      nickname: 'Test User',
+      isAdmin: false,
+      displayName: 'Test User',
+      email: 'test@example.com',
+      photoURL: 'https://example.com/photo.jpg',
+    });
+
+    expect(result.current.customUser).toEqual({
+      nickname: 'Test User',
+      isAdmin: false,
+      displayName: 'Test User',
+      email: 'test@example.com',
+      photoURL: 'https://example.com/photo.jpg',
+    });
+  });
 });
