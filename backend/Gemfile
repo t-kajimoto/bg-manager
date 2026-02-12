@@ -1,0 +1,51 @@
+source "https://rubygems.org"
+
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
+
+ruby "3.2.0"
+
+# Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
+gem "rails", "~> 7.2.0"
+
+# Use postgresql as the database for Active Record
+gem "pg", "~> 1.1"
+
+# Use Puck for the web server
+gem "puma", ">= 5.0"
+
+# Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
+# gem "jbuilder"
+
+# Use Redis adapter to run Action Cable in production
+# gem "redis", ">= 4.0"
+
+# Use Kredis to get higher-level data types in Redis
+# gem "kredis"
+
+# Use Active Model has_secure_password
+# gem "bcrypt", "~> 3.1.7"
+
+# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
+
+# Reduces boot times through caching; required in config/boot.rb
+gem "bootsnap", require: false
+
+# Use Faraday for HTTP requests
+gem "faraday"
+
+group :development, :test do
+  # Call 'byebug' anywhere in the code to stop execution and get a debugger console
+  gem "debug", platforms: %i[ mri mingw x64_mingw ]
+  gem "minitest"
+end
+
+group :development do
+  # Use Console on exceptions pages
+  gem "web-console"
+end
+
+group :test do
+  # Use simplecov for coverage analysis
+  gem "simplecov", require: false
+end
