@@ -1,62 +1,120 @@
-# Angular to Next.js Migration Plan
+# Supabase Migration & Backend Architecture Plan
 
-This document outlines the strategy and step-by-step plan for re-architecting the HARIDICE application from Angular to Next.js and React.
+This document outlines the design and implementation plan for migrating the HARIDICE application backend from Firebase (Firestore) to Supabase (PostgreSQL).
 
-## 1. Basic Policy
+## 1. Objectives
 
--   The migration will respect the existing design philosophy, especially the deep integration with Firebase, while rebuilding the frontend according to React/Next.js best practices.
--   The UI will be reimplemented using **MUI (Material-UI)**, a popular React UI library, to maintain a consistent look and feel with the original Angular Material design.
--   The data flow and state management architecture will be transitioned from Angular's Service-based model to one centered around **React Hooks and the Context API**.
+-   **Scalable Backend**: Move from a client-heavy NoSQL architecture to a structured Relational Database (RDB) to support complex queries and relationships.
+-   **Social Features**: Enable "Friend" systems and public sharing of game libraries, which are difficult to implement efficiently in Firestore.
+-   **Security**: Implement robust Row Level Security (RLS) policies to manage data visibility (Private/Friends/Public).
 
-## 2. Technology Stack Selection
+## 2. Database Schema Design (PostgreSQL)
 
--   **Framework**: Next.js (latest stable version, with App Router)
--   **UI Library**: MUI (Material-UI)
--   **State Management**:
-    -   Global state (e.g., authentication): React Context API
-    -   Local UI state: `useState`, `useReducer`
-    -   Server state & data fetching: Custom Hooks wrapping the Firebase SDK's real-time listeners. Initially, we will not introduce additional libraries like SWR or React Query to keep the stack lean.
--   **Forms**: React Hook Form
--   **Styling**: SCSS Modules, leveraging the existing `styles.scss`.
+### 2.1. ER Diagram Overview
 
-## 3. New Architecture Design
+```mermaid
+erDiagram
+    profiles ||--o{ library_entries : "owns"
+    profiles ||--o{ friendships : "initiates"
+    profiles ||--o{ friendships : "receives"
+    games ||--o{ library_entries : "referenced_by"
 
-### 3.1. Directory Structure
+    profiles {
+        uuid id PK "References auth.users.id"
+        string username
+        string avatar_url
+        boolean is_public_library
+        timestamp created_at
+    }
 
-The project will follow the standard directory structure for the Next.js App Router.
+    games {
+        uuid id PK
+        string title
+        string image_url
+        int min_players
+        int max_players
+        string bgg_id "External ID (BoardGameGeek)"
+        timestamp created_at
+    }
 
+    library_entries {
+        uuid id PK
+        uuid user_id FK
+        uuid game_id FK
+        string status "owned / wanted / played"
+        int rating "1-10"
+        text comment
+        string visibility "private / friends / public"
+        timestamp updated_at
+    }
+
+    friendships {
+        uuid user_id FK
+        uuid friend_id FK
+        string status "pending / accepted"
+        timestamp created_at
+    }
 ```
-/
-|-- /app            # Pages, layouts, and UI components for routes
-|   |-- /_components # Private components for pages (e.g., dialogs)
-|   |-- layout.tsx
-|   `-- page.tsx
-|-- /components     # Reusable, shared UI components (e.g., buttons, inputs)
-|-- /contexts       # React Context providers (e.g., AuthContext)
-|-- /hooks          # Custom Hooks for business logic and data fetching
-|   |-- useAuth.ts
-|   `-- useBoardgames.ts
-|-- /lib            # Library code, utility functions
-|   `-- /firebase   # Firebase SDK initialization and configuration
-`-- /types          # TypeScript type definitions
-```
 
-### 3.2. Logic Migration Strategy
+### 2.2. Table Definitions & RLS Policies
 
--   **`AuthService`**: Its responsibilities will be replaced by an `AuthContext` to provide global authentication state (`user`, `isAdmin`) and a `useAuth` hook to provide functions like `login` and `logout`.
--   **`BoardgameService`**: The logic for communicating with Firestore and joining data collections will be encapsulated within a `useBoardgames` custom hook. This hook will return the list of board games combined with user-specific data, ready for rendering.
+#### `profiles` (Public User Info)
+-   **RLS**:
+    -   `SELECT`: Public (everyone can see usernames/avatars).
+    -   `UPDATE`: Users can update their own profile only.
 
-### 3.3. Component Re-implementation
+#### `games` (Master Data)
+-   **RLS**:
+    -   `SELECT`: Public.
+    -   `INSERT`: Authenticated users (anyone can register a new game if it doesn't exist).
+    -   `UPDATE`: Admin only (or trusted users).
 
--   **`AppComponent` (Header/Toolbar)**: Will be reimplemented as a common layout component within `/app/layout.tsx`.
--   **`ListComponent` (Main Page)**: Will be the main page component at `/app/page.tsx`.
--   **Dialog Components**: Each dialog will be rebuilt as a separate React component using MUI's `Dialog` component, with its open/close state managed by the parent page component.
+#### `library_entries` (User's Collection)
+-   **RLS**:
+    -   `SELECT`:
+        -   If `visibility` is 'public' -> Everyone.
+        -   If `visibility` is 'friends' -> Only confirmed friends.
+        -   If `visibility` is 'private' -> Only owner.
+    -   `INSERT/UPDATE/DELETE`: Owner only.
 
-## 4. Step-by-Step Migration Plan
+#### `friendships` (Social Graph)
+-   **RLS**:
+    -   `SELECT`: Involved parties.
+    -   `INSERT`: Authenticated users (requesting friendship).
+    -   `UPDATE`: Receiver (accepting) or Sender (canceling).
 
-1.  **Environment Setup**: Create a new Next.js project and install the necessary dependencies (MUI, Firebase SDK, React Hook Form, SCSS). Configure Firebase credentials.
-2.  **Authentication**: Implement the core authentication flow. Create the `AuthContext` and `useAuth` hook to handle Google login/logout and provide user information globally.
-3.  **Read-Only Data Display**: Develop the `useBoardgames` hook to fetch and combine data from the `boardGames` and `userBoardGames` collections. Implement the main list view to display the games in a read-only fashion.
-4.  **Data Update Functionality**: Re-implement the dialog components one by one to handle data mutations (e.g., editing user evaluations, adding/editing board games for admins).
-5.  **Implement Remaining Features**: Re-implement auxiliary features such as the "Bodoge Gacha".
-6.  **Final Touches & CI/CD**: Ensure all features are working, refine styles, and configure GitHub Actions for automated deployment to Firebase Hosting.
+## 3. API Design (Server Actions)
+
+We will use **Next.js Server Actions** as our API layer, interacting directly with Supabase.
+
+### 3.1. Game Management
+-   `searchGames(query: string)`: Search games from local DB or external API (BGG).
+-   `registerGame(gameData: Game)`: Add a new game to the master list.
+
+### 3.2. Library Management
+-   `addToLibrary(gameId: string, status: string)`: Add a game to user's collection.
+-   `updateEntry(entryId: string, data: Partial<LibraryEntry>)`: Update rating, comment, visibility.
+-   `removeFromLibrary(entryId: string)`: Delete an entry.
+-   `getLibrary(userId: string)`: Fetch a user's library (respecting RLS).
+
+### 3.3. Social Features
+-   `sendFriendRequest(targetUserId: string)`
+-   `acceptFriendRequest(requestId: string)`
+-   `getFriends()`: List confirmed friends.
+-   `getFriendActivity()`: (Future) Recent updates from friends.
+
+## 4. Implementation Strategy
+
+1.  **Supabase Setup**:
+    -   Create a new Supabase project.
+    -   Run migration scripts to create tables and RLS policies.
+    -   Enable Auth providers (Google).
+
+2.  **Frontend Integration**:
+    -   Install `@supabase/ssr` and `@supabase/supabase-js`.
+    -   Replace `AuthContext` (Firebase) with Supabase Auth.
+    -   Update `useBoardgames` hook to fetch data via Server Actions instead of Firestore snapshots.
+
+3.  **Data Migration**:
+    -   Create a script to export Firestore data (`users`, `boardGames`, `userBoardGames`) to JSON.
+    -   Import JSON data into Supabase tables using a seeding script.
