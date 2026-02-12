@@ -9,24 +9,24 @@
 
 ```mermaid
 graph TD
-    subgraph Client [クライアント層 (Browser)]
+    subgraph Client ["クライアント層 (Browser)"]
         UI[Next.js App Router<br/>(React Components)]
         Zustand[クライアント状態管理<br/>(Local State / Context)]
     end
 
-    subgraph AppServer [アプリケーション層 (Vercel)]
+    subgraph AppServer ["アプリケーション層 (Vercel)"]
         ServerActions[Server Actions<br/>(Backend Logic)]
         AuthMiddleware[Middleware<br/>(認証チェック)]
     end
 
-    subgraph Backend [データ層 (Supabase)]
+    subgraph Backend ["データ層 (Supabase)"]
         Postgres[(PostgreSQL<br/>Database)]
         Auth[GoTrue<br/>(Authentication)]
         Storage[Storage<br/>(画像保存)]
         Realtime[Realtime<br/>(WebSocket)]
     end
 
-    subgraph External [外部サービス]
+    subgraph External ["外部サービス"]
         BGG[BoardGameGeek API]
     end
 

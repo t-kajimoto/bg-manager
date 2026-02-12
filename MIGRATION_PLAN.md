@@ -49,7 +49,7 @@ erDiagram
         text comment "ゲーム全体へのコメント"
         string visibility "private / friends / public"
         timestamp updated_at
-        unique(user_id, game_id) "1ユーザー1ゲームにつき1エントリー"
+        string unique_key "user_id_game_id (Unique)"
     }
 
     play_logs {
