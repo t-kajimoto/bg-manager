@@ -1,4 +1,4 @@
-class EnablePgcryptoExtension < ActiveRecord::Migration[7.2]
+class EnablePgcryptoExtension < ActiveRecord::Migration[7.1]
   def change
     enable_extension 'pgcrypto'
   end

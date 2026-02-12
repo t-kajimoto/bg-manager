@@ -1,4 +1,4 @@
-class CreateProfiles < ActiveRecord::Migration[7.2]
+class CreateProfiles < ActiveRecord::Migration[7.1]
   def change
     create_table :profiles, id: :uuid do |t|
       t.string :username, null: false
