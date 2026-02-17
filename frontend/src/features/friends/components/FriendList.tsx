@@ -3,11 +3,16 @@
 import { useState, useEffect } from 'react';
 import { 
   Box, Typography, List, ListItem, ListItemText, ListItemAvatar, 
-  Avatar, Button, Divider, Paper, Chip, IconButton, Dialog, 
-  DialogTitle, DialogContent, DialogActions, TextField, Alert,
+  Avatar, Button, Paper, IconButton, TextField, Alert,
   CircularProgress
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import { getFriendships, IFriendship, sendFriendRequest, respondToFriendRequest, getFriendshipsByUserId } from '@/app/actions/friends';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { BaseDialog } from '@/components/ui/BaseDialog';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { getFriendships, IFriendship, sendFriendRequest, respondToFriendRequest, getFriendshipsByUserId } from '@/app/actions/friends';
@@ -61,10 +66,19 @@ export const FriendList = ({ userId }: { userId?: string }) => {
   const receivedRequests = isMe ? friendships.filter(f => f.status === 'pending' && f.receiver_id === currentUserId) : [];
   const sentRequests = isMe ? friendships.filter(f => f.status === 'pending' && f.sender_id === currentUserId) : [];
 
-  if (loading) return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-      <CircularProgress />
-    </Box>
+  if (loading) return <LoadingSpinner />;
+
+  const addFriendActions = (
+    <>
+        <Button onClick={() => setOpenAddDialog(false)} color="inherit">キャンセル</Button>
+        <Button 
+        onClick={handleSendRequest} 
+        variant="contained" 
+        disabled={!targetUsername || addLoading}
+        >
+            {addLoading ? <CircularProgress size={24} color="inherit" /> : '申請を送る'}
+        </Button>
+    </>
   );
 
   return (
@@ -149,34 +163,27 @@ export const FriendList = ({ userId }: { userId?: string }) => {
         </Box>
       )}
 
-      <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} fullWidth maxWidth="xs">
-          <DialogTitle>フレンド申請</DialogTitle>
-          <DialogContent>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                  相手の「ユーザー名#1234」を入力してください。
-              </Typography>
-              {addError && <Alert severity="error" sx={{ mb: 2 }}>{addError}</Alert>}
-              <TextField 
-                label="名前#1234" 
-                fullWidth 
-                autoFocus 
-                value={targetUsername}
-                onChange={(e) => setTargetUsername(e.target.value)}
-                placeholder="ユーザー名#0000"
-                disabled={addLoading}
-              />
-          </DialogContent>
-          <DialogActions>
-              <Button onClick={() => setOpenAddDialog(false)}>キャンセル</Button>
-              <Button 
-                onClick={handleSendRequest} 
-                variant="contained" 
-                disabled={!targetUsername || addLoading}
-              >
-                  {addLoading ? <CircularProgress size={24} /> : '申請を送る'}
-              </Button>
-          </DialogActions>
-      </Dialog>
+      <BaseDialog 
+        open={openAddDialog} 
+        onClose={() => setOpenAddDialog(false)} 
+        title="フレンド申請"
+        actions={addFriendActions}
+        maxWidth="xs"
+      >
+          <Typography variant="body2" sx={{ mb: 2 }}>
+              相手の「ユーザー名#1234」を入力してください。
+          </Typography>
+          {addError && <Alert severity="error" sx={{ mb: 2 }}>{addError}</Alert>}
+          <TextField 
+            label="名前#1234" 
+            fullWidth 
+            autoFocus 
+            value={targetUsername}
+            onChange={(e) => setTargetUsername(e.target.value)}
+            placeholder="ユーザー名#0000"
+            disabled={addLoading}
+          />
+      </BaseDialog>
     </Box>
   );
 };

@@ -1,8 +1,6 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useForm, Controller, useFieldArray, SubmitHandler } from 'react-hook-form';
-import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Alert, MenuItem, IconButton, Typography, Checkbox, FormControlLabel, Paper, Autocomplete } from '@mui/material';
+import { TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Alert, MenuItem, IconButton, Typography, Paper, Autocomplete } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -11,6 +9,7 @@ import { addMatch, updateMatch, uploadMatchImage } from '@/app/actions/boardgame
 import { getProfiles, IProfile } from '@/app/actions/profiles';
 import { useAuth } from '@/contexts/AuthContext';
 import { IMatch } from '../types';
+import { BaseDialog } from '@/components/ui/BaseDialog';
 
 interface MatchDialogProps {
   open: boolean;
@@ -177,10 +176,24 @@ export const MatchDialog = ({ open, onClose, onSuccess, boardGames, initialData,
   };
 
   return (
-    <Dialog open={open} onClose={loading ? undefined : handleClose} maxWidth="md" fullWidth fullScreen={fullScreen}>
-      <DialogTitle>{mode === 'add' ? '戦績を記録' : '戦績を編集'}</DialogTitle>
+  const actionButtons = (
+    <>
+      <Button onClick={handleClose} disabled={loading} color="inherit">キャンセル</Button>
+      <Button onClick={handleSubmit(handleFormSubmit)} variant="contained" disabled={loading} autoFocus>
+        {loading ? <CircularProgress size={24} color="inherit" /> : (mode === 'add' ? '記録' : '更新')}
+      </Button>
+    </>
+  );
+
+  return (
+    <BaseDialog
+      open={open}
+      onClose={handleClose}
+      title={mode === 'add' ? '戦績を記録' : '戦績を編集'}
+      actions={actionButtons}
+      maxWidth="md"
+    >
       <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogContent>
           {errorMessage && (
              <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>
           )}
@@ -323,14 +336,9 @@ export const MatchDialog = ({ open, onClose, onSuccess, boardGames, initialData,
             />
 
           </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>キャンセル</Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : (mode === 'add' ? '記録' : '更新')}
-          </Button>
-        </DialogActions>
       </form>
-    </Dialog>
+    </BaseDialog>
+  );
+};
   );
 };

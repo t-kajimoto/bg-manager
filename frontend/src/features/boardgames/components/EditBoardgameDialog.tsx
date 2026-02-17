@@ -3,9 +3,10 @@
 
 import { useEffect, useState } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
-import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Alert, Autocomplete, Chip, FormControlLabel, Checkbox } from '@mui/material';
+import { TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Alert, Autocomplete, Chip, FormControlLabel, Checkbox } from '@mui/material';
 import { IBoardGame } from '@/features/boardgames/types';
 import { updateBoardGame } from '@/app/actions/boardgames';
+import { BaseDialog } from '@/components/ui/BaseDialog';
 
 interface EditBoardgameDialogProps {
   open: boolean;
@@ -103,11 +104,24 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
     }
   };
 
+  const actionButtons = (
+    <>
+      <Button onClick={onClose} disabled={loading} color="inherit">キャンセル</Button>
+      <Button onClick={handleSubmit(handleFormSubmit)} variant="contained" disabled={loading}>
+        {loading ? <CircularProgress size={24} color="inherit" /> : '更新'}
+      </Button>
+    </>
+  );
+
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
-      <DialogTitle>ボードゲーム情報を編集</DialogTitle>
+    <BaseDialog
+      open={open}
+      onClose={onClose}
+      title="ボードゲーム情報を編集"
+      actions={actionButtons}
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogContent>
           {errorMessage && (
              <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>
           )}
@@ -215,14 +229,9 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
               />
             </Box>
           </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} disabled={loading}>キャンセル</Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : '更新'}
-          </Button>
-        </DialogActions>
       </form>
-    </Dialog>
+    </BaseDialog>
+  );
+};
   );
 };

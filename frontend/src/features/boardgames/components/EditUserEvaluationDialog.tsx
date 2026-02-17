@@ -3,10 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
-import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress, Rating, Box, Alert } from '@mui/material';
+import { TextField, Button, CircularProgress, Rating, Box, Alert } from '@mui/material';
 import { IBoardGame } from '@/features/boardgames/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateUserGameState } from '@/app/actions/boardgames';
+import { BaseDialog } from '@/components/ui/BaseDialog';
 
 interface EditUserEvaluationDialogProps {
   open: boolean;
@@ -65,11 +66,25 @@ export const EditUserEvaluationDialog = ({ open, onClose, game, onSuccess }: Edi
     }
   };
 
+  const actionButtons = (
+    <>
+      <Button onClick={onClose} disabled={loading} color="inherit">キャンセル</Button>
+      <Button onClick={handleSubmit(handleFormSubmit)} variant="contained" disabled={loading}>
+        {loading ? <CircularProgress size={24} color="inherit" /> : '更新'}
+      </Button>
+    </>
+  );
+
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>{game?.name} の評価</DialogTitle>
+    <BaseDialog
+      open={open}
+      onClose={onClose}
+      title={`${game?.name} の評価`}
+      actions={actionButtons}
+      maxWidth="xs"
+    >
       <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogContent sx={{ textAlign: 'center' }}>
+         <Box sx={{ textAlign: 'center' }}>
           {errorMessage && (
              <Alert severity="error" sx={{ mb: 2, textAlign: 'left' }}>{errorMessage}</Alert>
           )}
@@ -89,14 +104,8 @@ export const EditUserEvaluationDialog = ({ open, onClose, game, onSuccess }: Edi
               <TextField {...field} margin="dense" label="コメント" type="text" fullWidth multiline rows={2} disabled={loading} />
             )}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} disabled={loading}>キャンセル</Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : '更新'}
-          </Button>
-        </DialogActions>
+        </Box>
       </form>
-    </Dialog>
+    </BaseDialog>
   );
 };

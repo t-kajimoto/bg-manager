@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Box
 } from '@mui/material';
+import { BaseDialog } from '@/components/ui/BaseDialog';
 
 interface EditNicknameDialogProps {
   open: boolean;
@@ -43,31 +40,37 @@ export const EditNicknameDialog = ({ open, onClose, currentNickname }: EditNickn
     onClose();
   };
 
+  const actionButtons = (
+    <>
+      <Button onClick={handleCancel}>キャンセル</Button>
+      <Button onClick={handleSave} variant="contained" disabled={!nickname.trim()}>
+        保存
+      </Button>
+    </>
+  );
+
   return (
-    <Dialog open={open} onClose={() => onClose()}>
-      <DialogTitle>ニックネームを編集</DialogTitle>
-      <DialogContent>
-        <Box sx={{ pt: 2 }}>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="ニックネーム"
-            fullWidth
-            variant="outlined"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            inputProps={{ maxLength: 20 }}
-            helperText={`${nickname.length}/20`}
-            required
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleCancel}>キャンセル</Button>
-        <Button onClick={handleSave} variant="contained" disabled={!nickname.trim()}>
-          保存
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <BaseDialog
+      open={open}
+      onClose={() => onClose()}
+      title="ニックネームを編集"
+      actions={actionButtons}
+      maxWidth="sm"
+    >
+      <Box sx={{ pt: 2 }}>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="ニックネーム"
+          fullWidth
+          variant="outlined"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          inputProps={{ maxLength: 20 }}
+          helperText={`${nickname.length}/20`}
+          required
+        />
+      </Box>
+    </BaseDialog>
   );
 };

@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
-import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Alert, Autocomplete, debounce, Typography, Avatar, FormControlLabel, Checkbox, Chip } from '@mui/material';
+import { TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Alert, Autocomplete, debounce, Avatar, FormControlLabel, Checkbox, Chip } from '@mui/material';
 import { addBoardGame } from '@/app/actions/boardgames';
 import { searchBoardGame, getBoardGameDetails, BGGCandidate, BGGDetails } from '@/app/actions/bgg';
+import { BaseDialog } from '@/components/ui/BaseDialog';
 
 interface AddBoardgameDialogProps {
   open: boolean;
@@ -151,61 +152,24 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
     onClose();
   };
 
-  const onGameSelected = async (option: BGGCandidate | string | null) => {
-      // Clear details if selection is cleared or invalid
-      if (!option) {
-          setSelectedBGGDetails(null);
-          return;
-      }
-      
-      // If user typed a string (free text), we don't fetch BGG details
-      // but we keep the name they typed.
-      if (typeof option === 'string') {
-          setSelectedBGGDetails(null);
-          setValue('name', option);
-          return;
-      }
-
-      // If user selected a BGG candidate
-      setDetailsLoading(true);
-      const details = await getBoardGameDetails(option.id);
-      setDetailsLoading(false);
-
-      if (details) {
-          setSelectedBGGDetails(details);
-          
-          // Auto-populate fields
-          if (details.name) setValue('name', details.name);
-          if (details.minPlayers) setValue('min', details.minPlayers);
-          if (details.maxPlayers) setValue('max', details.maxPlayers);
-          if (details.playTime) setValue('time', details.playTime);
-          if (details.minPlayTime) setValue('minPlayTime', details.minPlayTime);
-          if (details.maxPlayTime) setValue('maxPlayTime', details.maxPlayTime);
-          
-          // Map BGG specific fields
-          if (details.year) setValue('yearPublished', details.year);
-          if (details.description) setValue('description', details.description);
-          if (details.designers) setValue('designers', details.designers.join(', '));
-          if (details.artists) setValue('artists', details.artists.join(', '));
-          if (details.publishers) setValue('publishers', details.publishers.join(', '));
-          if (details.mechanics) setValue('mechanics', details.mechanics.join(', '));
-          if (details.categories) setValue('categories', details.categories.join(', '));
-          if (details.averageRating) setValue('averageRating', details.averageRating);
-          if (details.complexity) setValue('complexity', details.complexity);
-
-          // Map mechanics and categories to tags
-          const mechanics = details.mechanics || [];
-          const categories = details.categories || [];
-          const mergedTags = Array.from(new Set([...mechanics, ...categories])).slice(0, 10);
-          setValue('tags', mergedTags);
-      }
-  };
+  const actionButtons = (
+    <>
+      <Button onClick={handleClose} disabled={loading} color="inherit">キャンセル</Button>
+      <Button onClick={handleSubmit(handleFormSubmit)} variant="contained" disabled={loading}>
+        {loading ? <CircularProgress size={24} color="inherit" /> : '追加'}
+      </Button>
+    </>
+  );
 
   return (
-    <Dialog open={open} onClose={loading ? undefined : handleClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
-      <DialogTitle>新しいボードゲームを追加</DialogTitle>
+    <BaseDialog
+      open={open}
+      onClose={handleClose}
+      title="新しいボードゲームを追加"
+      actions={actionButtons}
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogContent>
           {errorMessage && (
              <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>
           )}
@@ -397,14 +361,9 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
               />
             </Box>
           </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>キャンセル</Button>
-          <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : '追加'}
-          </Button>
-        </DialogActions>
       </form>
-    </Dialog>
+    </BaseDialog>
+  );
+};
   );
 };

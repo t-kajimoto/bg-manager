@@ -10,7 +10,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import { AddBoardgameDialog } from "@/features/boardgames/components/AddBoardgameDialog";
 import { EditBoardgameDialog } from "@/features/boardgames/components/EditBoardgameDialog";
-import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EditUserEvaluationDialog } from "@/features/boardgames/components/EditUserEvaluationDialog";
 import { BodogeGachaDialog } from "@/features/gacha/components/BodogeGachaDialog";
 import { GachaResultDialog } from "@/features/gacha/components/GachaResultDialog";
@@ -179,14 +179,14 @@ export default function Home() {
         game={selectionState.selectedGame}
         onSuccess={handlers.refreshData}
       />
-      <ConfirmationDialog
+      <ConfirmDialog
         open={dialogState.openDeleteConfirm}
-        onClose={() => dialogState.setOpenDeleteConfirm(false)}
+        onCancel={() => dialogState.setOpenDeleteConfirm(false)}
         onConfirm={handlers.handleDeleteConfirm}
         title="ボードゲームの削除"
         message={`本当に「${selectionState.selectedGame?.name}」を削除しますか？この操作は元に戻せません。`}
         confirmText="削除"
-        loading={isDeleting}
+        isDangerous={true}
       />
       <EditUserEvaluationDialog
         open={dialogState.openEvaluationDialog}
