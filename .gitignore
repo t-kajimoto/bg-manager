@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/frontend/node_modules
+/backend/vendor/
 /.pnp
 .pnp.*
 .yarn/*
@@ -15,10 +17,12 @@
 
 # next.js
 /.next/
+/frontend/.next/
 /out/
 
 # production
 /build
+/frontend/build
 
 # misc
 .DS_Store
@@ -44,4 +48,5 @@ next-env.d.ts
 screenshots/
 test-results/
 playwright-report/
-backend/vendor/
+test-results/
+playwright-report/
