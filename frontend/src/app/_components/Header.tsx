@@ -2,47 +2,30 @@
 
 import { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, CircularProgress, Menu, MenuItem } from '@mui/material';
-import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import AccountCircle from '@mui/icons-material/AccountCircle';
-import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/contexts/AuthContext';
-import { EditNicknameDialog } from '@/features/auth/components/EditNicknameDialog';
+import { createClient } from '@/lib/supabase/client';
 
 export default function Header() {
-  const { user, customUser, loading, updateNickname } = useAuth();
+  const { user, customUser, loading, signOut } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openNicknameDialog, setOpenNicknameDialog] = useState(false);
+  const supabase = createClient();
 
   const handleLogin = async () => {
+    // Mock mode logic if needed, or remove if relying on Supabase Mock
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') return;
 
-    if (!auth) {
-      console.error("Firebase Auth is not configured.");
-      return;
-    }
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error signing in: ", error);
-    }
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
   };
 
   const handleLogout = async () => {
-    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
-        window.location.reload();
-        return;
-    }
-
-    if (!auth) {
-      console.error("Firebase Auth is not configured.");
-      return;
-    }
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Error signing out: ", error);
-    }
+     await signOut();
+     handleClose();
   };
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -53,17 +36,6 @@ export default function Header() {
     setAnchorEl(null);
   };
 
-  const handleEditNickname = () => {
-    handleClose();
-    setOpenNicknameDialog(true);
-  };
-
-  const handleSaveNickname = async (newNickname?: string) => {
-    setOpenNicknameDialog(false);
-    if (newNickname) {
-      await updateNickname(newNickname);
-    }
-  };
 
   return (
     <AppBar position="static">
@@ -90,7 +62,12 @@ export default function Header() {
                 }}
               >
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  {customUser?.nickname || user.displayName}
+                  {customUser?.displayName || customUser?.nickname || user.user_metadata.full_name}
+                  {customUser?.discriminator && (
+                    <Box component="span" sx={{ opacity: 0.7, ml: 0.5, fontSize: '0.8em' }}>
+                      #{customUser.discriminator}
+                    </Box>
+                  )}
                 </Box>
               </Button>
               <Menu
@@ -98,7 +75,7 @@ export default function Header() {
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
               >
-                <MenuItem onClick={handleEditNickname}>ニックネームを編集</MenuItem>
+                <MenuItem onClick={() => { handleClose(); window.location.href = '/mypage'; }}>マイページ</MenuItem>
                 <MenuItem onClick={handleLogout}>ログアウト</MenuItem>
               </Menu>
             </>
@@ -112,11 +89,6 @@ export default function Header() {
           )}
         </Box>
       </Toolbar>
-      <EditNicknameDialog
-        open={openNicknameDialog}
-        onClose={handleSaveNickname}
-        currentNickname={customUser?.nickname || null}
-      />
     </AppBar>
   );
 }
