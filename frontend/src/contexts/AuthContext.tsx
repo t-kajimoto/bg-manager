@@ -1,19 +1,19 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/config';
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
 import { MOCK_USER } from '@/lib/mock/data';
 
 /**
  * @interface ICustomUser
- * @description Firestoreに保存されている、アプリケーション独自のユーザー情報の型定義です。
- * @property {string} nickname - ユーザーが設定したニックネーム。
- * @property {boolean} isAdmin - ユーザーが管理者権限を持つかどうかを示すフラグ。
- * @property {string} [displayName] - Firebase Authenticationから取得した表示名。
- * @property {string} [email] - Firebase Authenticationから取得したメールアドレス。
- * @property {string} [photoURL] - Firebase Authenticationから取得したプロフィール画像のURL。
+ * @description Supabaseのprofilesテーブルに保存されている、アプリケーション独自のユーザー情報の型定義です。
+ */
+export type Visibility = 'public' | 'friends' | 'private';
+
+/**
+ * @interface ICustomUser
+ * @description Supabaseのprofilesテーブルに保存されている、アプリケーション独自のユーザー情報の型定義です。
  */
 interface ICustomUser {
   nickname: string;
@@ -21,164 +21,247 @@ interface ICustomUser {
   displayName?: string;
   email?: string;
   photoURL?: string;
+  discriminator?: string;
+  bio?: string;
+  visibilityGames?: Visibility;
+  visibilityMatches?: Visibility;
+  visibilityFriends?: Visibility;
+  visibilityUserList?: Visibility;
 }
 
 /**
  * @interface AuthContextType
  * @description AuthContextが提供する値の型定義です。
- * @property {User | null} user - Firebase Authenticationから提供されるユーザーオブジェクト。未ログイン時はnull。
- * @property {ICustomUser | null} customUser - Firestoreから取得したカスタムユーザー情報。未ログイン時や情報がない場合はnull。
- * @property {boolean} loading - 認証状態をチェックしている最中かどうかを示すフラグ。trueの間はスピナーなどを表示するのに使えます。
- * @property {(nickname: string) => Promise<void>} updateNickname - ニックネームを更新する関数。
  */
 export interface AuthContextType {
   user: User | null;
+  session: Session | null;
   customUser: ICustomUser | null;
   loading: boolean;
   updateNickname: (nickname: string) => Promise<void>;
+  updateProfile: (data: Partial<ICustomUser>) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 /**
  * @const AuthContext
- * @description 認証情報（Firebaseユーザー、カスタムユーザー情報、ローディング状態）をアプリケーション全体で共有するためのReact Contextです。
  */
 export const AuthContext = createContext<AuthContextType>({
   user: null,
+  session: null,
   customUser: null,
   loading: true,
   updateNickname: async () => {},
+  updateProfile: async () => {},
+  signOut: async () => {},
 });
 
 /**
  * @component AuthProvider
- * @description アプリケーションに認証機能を提供するContext Providerコンポーネントです。
- * Firebase Authenticationの認証状態を監視し、ログインしているユーザーの情報を取得・保持します。
- * このコンポーネントでラップされた子コンポーネントは、`useAuth`フックを通じて認証情報にアクセスできます。
- * @param {{ children: ReactNode }} props - ラップする子コンポーネント。
  */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // Firebaseのユーザー情報を保持するstate
-  const [user, setUser] = useState<User | null>(() => {
-    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
-      return {
-        uid: MOCK_USER.uid,
-        displayName: MOCK_USER.displayName,
-        email: MOCK_USER.email,
-        photoURL: MOCK_USER.photoURL,
-      } as User;
-    }
-    return null;
-  });
+  const [supabase] = useState(() => createClient());
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [customUser, setCustomUser] = useState<ICustomUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Firestoreのカスタムユーザー情報を保持するstate
-  const [customUser, setCustomUser] = useState<ICustomUser | null>(() => {
-    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
-      return {
-        nickname: MOCK_USER.nickname || "",
-        isAdmin: MOCK_USER.isAdmin || false,
-      };
-    }
-    return null;
-  });
-
-  // ローディング状態を保持するstate
-  const [loading, setLoading] = useState(() => {
-    // モックモードの場合は初期ロード完了済みとする
-    return process.env.NEXT_PUBLIC_USE_MOCK !== 'true';
-  });
-
-  // 副作用フックを使用して、コンポーネントのマウント時に一度だけ認証状態の監視を開始します。
+  // Mock handling (if needed)
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
-      console.log('Using Mock User');
-      return;
-    }
-
-    // Firebaseの設定が読み込めなかった場合（環境変数が未設定など）は、何もせずに処理を中断します。
-    if (!auth) {
-      return;
-    }
-
-    // onAuthStateChangedはFirebase Authの認証状態（ログイン、ログアウト）が変わるたびに呼び出されるリスナーを登録します。
-    // 返り値のunsubscribe関数をクリーンアップ時に呼び出すことで、メモリリークを防ぎます。
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        // ユーザーがログインしている、かつFirestoreのDBインスタンスも利用可能な場合
-        if (user && db) {
-          // 取得したユーザー情報をstateにセットします。
-          setUser(user);
-
-          // Firestoreからこのユーザーに対応する追加情報を取得します。
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-
-          // ドキュメントが存在すれば、そのデータをカスタムユーザー情報のstateにセットします。
-          if (userDoc.exists()) {
-            setCustomUser(userDoc.data() as ICustomUser);
-          } else {
-            // ドキュメントが存在しない場合（初回ログイン時など）は、新規作成します。
-            const newUser: ICustomUser = {
-              nickname: user.displayName || 'No Name',
-              isAdmin: false,
-              displayName: user.displayName || '',
-              email: user.email || '',
-              photoURL: user.photoURL || '',
-            };
-            await setDoc(userDocRef, newUser);
-            setCustomUser(newUser);
-          }
-        } else {
-          // ユーザーがログアウトしている場合、すべてのユーザー情報をnullにリセットします。
-          setUser(null);
-          setCustomUser(null);
+      setUser({
+        id: MOCK_USER.uid,
+        email: MOCK_USER.email,
+        user_metadata: {
+          full_name: MOCK_USER.displayName,
+          avatar_url: MOCK_USER.photoURL,
         }
-      } catch (error) {
-        console.error("Error in onAuthStateChanged:", error);
-        // エラー発生時はログアウト扱いにするなどの安全策をとる
+      } as unknown as User);
+      setCustomUser({
+        nickname: MOCK_USER.nickname || "",
+        isAdmin: MOCK_USER.isAdmin || false,
+      });
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') return;
+
+    let mounted = true;
+
+    const fetchProfile = async (sessionUser: User) => {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', sessionUser.id)
+          .single();
+
+        if (mounted) {
+          if (profile) {
+            // Google等のOAuthから画像を取得できているが、DBに保存されていない場合は初回同期
+            const googleAvatarUrl = sessionUser.user_metadata?.avatar_url;
+            if (!profile.avatar_url && googleAvatarUrl) {
+              await supabase
+                .from('profiles')
+                .update({ avatar_url: googleAvatarUrl })
+                .eq('id', sessionUser.id);
+            }
+
+            setCustomUser({
+              nickname: profile.username || sessionUser.user_metadata?.full_name || 'No Name',
+              isAdmin: profile.username === 'admin',
+              displayName: profile.display_name || sessionUser.user_metadata?.full_name,
+              email: sessionUser.email,
+              photoURL: profile.avatar_url || googleAvatarUrl,
+              discriminator: profile.discriminator,
+              bio: profile.bio,
+              visibilityGames: profile.visibility_games as Visibility,
+              visibilityMatches: profile.visibility_matches as Visibility,
+              visibilityFriends: profile.visibility_friends as Visibility,
+              visibilityUserList: profile.visibility_user_list as Visibility,
+            });
+          } else {
+            setCustomUser({
+              nickname: sessionUser.user_metadata?.full_name || 'No Name',
+              isAdmin: false,
+              displayName: sessionUser.user_metadata?.full_name,
+              email: sessionUser.email,
+              photoURL: sessionUser.user_metadata?.avatar_url,
+              visibilityGames: 'public',
+              visibilityMatches: 'public',
+              visibilityFriends: 'public',
+              visibilityUserList: 'public',
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            await fetchProfile(session.user);
+          } else {
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing auth:', err);
+        if (mounted) setLoading(false);
+      }
+    };
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
+      // Only re-fetch if state actually changed or it's a critical event
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.user);
+        } else {
+          setLoading(false);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null);
         setUser(null);
         setCustomUser(null);
-      } finally {
-        // 認証状態のチェックが完了したので、ローディング状態をfalseにします。
         setLoading(false);
       }
     });
 
-    // コンポーネントがアンマウントされる際に、登録したリスナーを解除します。
-    return () => unsubscribe();
-  }, []); // 空の依存配列は、このuseEffectがマウント時に一度だけ実行されることを意味します。
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const updateNickname = async (nickname: string) => {
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
       setCustomUser(prev => prev ? { ...prev, nickname } : null);
       return;
     }
+    if (!user) return;
 
-    if (user && db) {
-      try {
-        const userRef = doc(db, 'users', user.uid);
-        await setDoc(userRef, { nickname }, { merge: true });
-        setCustomUser(prev => prev ? { ...prev, nickname } : {
-          nickname,
-          isAdmin: false
-        });
-      } catch (error) {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ username: nickname })
+        .eq('id', user.id);
+
+      if (!error) {
+        setCustomUser(prev => prev ? { ...prev, nickname } : null);
+      } else {
         console.error("Error updating nickname:", error);
       }
+    } catch (error) {
+       console.error("Error updating nickname:", error);
     }
   };
 
-  // Contextに渡す値
-  const value = { user, customUser, loading, updateNickname };
+  const updateProfile = async (data: Partial<ICustomUser>) => {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+      setCustomUser(prev => prev ? { ...prev, ...data } : null);
+      return;
+    }
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          display_name: data.displayName,
+          discriminator: data.discriminator,
+          bio: data.bio,
+          avatar_url: data.photoURL,
+          username: data.displayName, // 同期
+          visibility_games: data.visibilityGames,
+          visibility_matches: data.visibilityMatches,
+          visibility_friends: data.visibilityFriends,
+          visibility_user_list: data.visibilityUserList,
+        })
+        .eq('id', user.id);
+
+      if (!error) {
+        setCustomUser(prev => prev ? { ...prev, ...data } : null);
+      } else {
+        console.error("Error updating profile:", error);
+      }
+    } catch (error) {
+       console.error("Error updating profile:", error);
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const value = useMemo(
+    () => ({ user, session, customUser, loading, updateNickname, updateProfile, signOut }),
+    [user, session, customUser, loading]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * @hook useAuth
- * @description `AuthContext`の値を簡単に利用するためのカスタムフックです。
- * このフックを使うことで、コンポーネントは認証状態（ユーザー情報、ローディング状態）にアクセスできます。
- * @returns {AuthContextType} 現在の認証情報。
- */
 export const useAuth = () => {
   return useContext(AuthContext);
 };
