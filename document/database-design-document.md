@@ -1,182 +1,277 @@
-# データベース設計書 (Cloud Firestore)
+# データベース設計書 (Supabase PostgreSQL)
 
 ## 1. 概要
 
-本ドキュメントは、ボードゲーム管理アプリケーション「HARIDICE」が使用するCloud Firestoreデータベースの論理設計と物理設計を定義します。
-データベースは、ボードゲームのカタログ情報、ユーザープロファイル、および各ユーザーのゲームに対するインタラクション（評価やプレイ状況）を格納する責務を負います。
+本ドキュメントは、ボードゲーム管理アプリケーション「HARIDICE」が使用するSupabase (PostgreSQL) データベースの論理設計と物理設計を定義します。
+データベースは、ボードゲームのカタログ情報、ユーザープロファイル、各ユーザーのゲームに対するインタラクション（評価やプレイ状況）、および対戦記録を格納する責務を負います。
 
 ## 2. 設計思想
 
--   **非正規化の戦略的活用**: NoSQLデータベースの特性を活かし、読み取りパフォーマンスを最適化するために、一部のデータは意図的に重複して保持します。例えば、`boardGames`コレクションに`ownerName`を保持することで、ゲームリスト表示の際に`users`コレクションへの問い合わせを不要にしています。
--   **クライアントサイドでのデータ結合**: FirestoreはサーバーサイドでのJoin操作をサポートしないため、複数のコレクションにまたがるデータの結合は、クライアントサイド（主にAngularの`BoardgameService`）でRxJSを用いてリアクティブに行います。
--   **スケーラビリティとパフォーマンス**: コレクションとドキュメントの構造は、将来的なデータ量の増加に対応できるよう、クエリが常にドキュメントの深さに依存せず、高速に実行可能な「浅いクエリ」で完結するように設計されています。
+- **リレーショナルモデル**: PostgreSQLのリレーショナルデータベース機能を活用し、データ整合性を保ちます。
+- **Row Level Security (RLS)**: SupabaseのRLS機能を使用して、データアクセス制御をデータベースレベルで強制します。
+- **Server Actions**: Next.jsのServer Actionsを通じてデータベース操作を行い、セキュアで効率的なデータアクセスを実現します。
 
 ## 3. データモデル図 (ER図)
 
 ```mermaid
 erDiagram
-    users {
-        string uid PK "Firebase AuthのUID"
-        string email
-        string displayName
-        string photoURL
-        string nickname
-        boolean isAdmin "管理者フラグ"
+    profiles {
+        uuid id PK "ユーザーID (id)"
+        text username "ユーザー名 (username)"
+        text display_name "表示名 (display_name)"
+        text discriminator "識別番号 (discriminator)"
+        text full_name "OAuth由来の名前 (full_name)"
+        text bio "自己紹介 (bio)"
+        text avatar_url "アバター画像URL (avatar_url)"
+        timestamp updated_at "更新日時 (updated_at)"
     }
 
-    boardGames {
-        string id PK "自動生成ID"
-        string name
-        number min "最小プレイ人数"
-        number max "最大プレイ人数"
-        number time "プレイ時間(分)"
-        string_array tags
-        string ownerName "所有者名(登録時のスナップショット)"
+    board_games {
+        uuid id PK "ゲームID (id)"
+        text name "ゲーム名 (name)"
+        int min_players "最小プレイ人数 (min_players)"
+        int max_players "最大プレイ人数 (max_players)"
+        int play_time_minutes "標準プレイ時間 (play_time_minutes)"
+        text[] tags "タグ (tags)"
+        uuid created_by FK "作成者ID (created_by)"
+        timestamp created_at "作成日時 (created_at)"
+        text bgg_id "BGG ID (bgg_id)"
+        text image_url "画像URL (image_url)"
+        text thumbnail_url "サムネイルURL (thumbnail_url)"
+        text description "説明 (description)"
+        int min_playtime "最小プレイ時間 (min_playtime)"
+        int max_playtime "最大プレイ時間 (max_playtime)"
+        int year_published "発行年 (year_published)"
+        text[] designers "デザイナー (designers)"
+        text[] artists "アーティスト (artists)"
+        text[] publishers "パブリッシャー (publishers)"
+        text[] mechanics "メカニクス (mechanics)"
+        text[] categories "カテゴリ (categories)"
+        double average_rating "BGG平均評価 (average_rating)"
+        double complexity "BGG重ゲー度 (complexity)"
     }
 
-    userBoardGames {
-        string compositeId PK "userId_boardGameId"
-        string userId FK
-        string boardGameId FK
-        boolean played "プレイ済みか"
-        number evaluation "評価(1-5)"
-        string comment "ひとことコメント"
+    user_board_game_states {
+        uuid id PK "ID (id)"
+        uuid user_id FK "ユーザーID (user_id)"
+        uuid board_game_id FK "ゲームID (board_game_id)"
+        boolean played "プレイ済み (played)"
+        int evaluation "評価 (evaluation)"
+        text comment "コメント (comment)"
+        timestamp updated_at "更新日時 (updated_at)"
     }
 
-    users ||--o{ userBoardGames : "評価する"
-    boardGames ||--o{ userBoardGames : "評価される"
+    matches {
+        uuid id PK "マッチID (id)"
+        uuid board_game_id FK "ゲームID (board_game_id)"
+        timestamp date "対戦日時 (date)"
+        text location "場所 (location)"
+        text note "メモ (note)"
+        text image_url "対戦写真URL (image_url)"
+        uuid created_by FK "作成者ID (created_by)"
+        timestamp created_at "作成日時 (created_at)"
+    }
+
+    match_players {
+        uuid id PK "ID (id)"
+        uuid match_id FK "マッチID (match_id)"
+        uuid user_id FK "ユーザーID (user_id)"
+        text player_name "プレイヤー名 (player_name)"
+        text score "スコア (score)"
+        int rank "順位 (rank)"
+        text role "役職 (role)"
+    }
+
+    owned_games {
+        uuid id PK "ID (id)"
+        uuid user_id FK "ユーザーID (user_id)"
+        uuid board_game_id FK "ゲームID (board_game_id)"
+        timestamp created_at "所有日時 (created_at)"
+    }
+
+    friendships {
+        uuid id PK "ID (id)"
+        uuid sender_id FK "申請者 (sender_id)"
+        uuid receiver_id FK "受信者 (receiver_id)"
+        text status "状態 (status)"
+        timestamp created_at "申請日時 (created_at)"
+    }
+
+    profiles ||--o{ board_games : "作成"
+    profiles ||--o{ owned_games : "所有"
+    board_games ||--o{ owned_games : "所有者"
+    profiles ||--o{ user_board_game_states : "インタラクション"
+    board_games ||--o{ user_board_game_states : "対象"
+    profiles ||--o{ matches : "記録"
+    board_games ||--o{ matches : "プレイされたゲーム"
+    matches ||--|{ match_players : "参加プレイヤー"
+    profiles ||--o{ match_players : "ユーザーとして参加"
+    profiles ||--o{ friendships : "フレンド申請"
 ```
 
-## 4. コレクション詳細
+## 4. テーブル詳細
 
-### 4.1. `users`
+### 4.1. ユーザープロフィール (profiles)
 
-アプリケーションのユーザープロファイル情報を格納するコレクション。
+ユーザーの公開プロフィール情報を格納します。`auth.users` テーブルと1対1で対応します。
 
--   **コレクションパス**: `/users`
--   **ドキュメントID**: Firebase Authenticationによって発行されるユーザーUID (`request.auth.uid`) を使用します。これにより、認証情報とデータベースのユーザー情報が一対一で対応します。
--   **対応インターフェース**: `IUser`
+| 論理名 (物理名)                        | データ型    | 必須 | 説明                                         | 備考                   |
+| :------------------------------------- | :---------- | :--- | :------------------------------------------- | :--------------------- |
+| ユーザーID (id)                        | `uuid`      | ✔    | ユーザーを一意に識別するID                   | `auth.users.id` を参照 |
+| ユーザー名 (username)                  | `text`      |      | アプリケーション内で使用する一意のユーザー名 | ユニーク制約           |
+| 表示名 (display_name)                  | `text`      |      | ユーザーが決める表示名                       |                        |
+| 識別番号 (discriminator)               | `text`      |      | 重複を避けるための4桁の数字                  |                        |
+| OAuth上の名前 (full_name)              | `text`      |      | Google等から取得したフルネーム               |                        |
+| 自己紹介 (bio)                         | `text`      |      | 簡単なプロフィール説明                       |                        |
+| アバター画像URL (avatar_url)           | `text`      |      | プロフィール画像のURL                        |                        |
+| 公開設定:ゲーム (visibility_games)     | `text`      | ✔    | 'public', 'friends', 'private'               | デフォルト 'public'    |
+| 公開設定:戦績 (visibility_matches)     | `text`      | ✔    | 'public', 'friends', 'private'               | デフォルト 'public'    |
+| 公開設定:フレンド (visibility_friends) | `text`      | ✔    | 'public', 'friends', 'private'               | デフォルト 'public'    |
+| 公開設定:一覧 (visibility_user_list)   | `text`      | ✔    | 'public', 'friends', 'private'               | デフォルト 'public'    |
+| 更新日時 (updated_at)                  | `timestamp` |      | レコードの最終更新日時                       |                        |
 
-#### フィールド定義
+### 4.2. ボードゲーム (board_games)
 
-| フィールド名 | データ型 | 必須 | 説明 | 備考 |
-| :--- | :--- | :--- | :--- | :--- |
-| `uid` | `string` | ✔ | Firebase Authenticationから提供される一意のユーザーID。 | ドキュメントIDと同一。 |
-| `email` | `string` | ✔ | ユーザーのメールアドレス。 | Google認証から取得。 |
-| `displayName` | `string` | ✔ | Googleアカウントの表示名。 | |
-| `photoURL` | `string` | ✔ | Googleアカウントのプロフィール写真のURL。 | |
-| `nickname` | `string` | | ユーザーがアプリ内で設定したニックネーム。 | 未設定の場合は `displayName` をフォールバックとして使用。 |
-| `isAdmin` | `boolean` | | ユーザーが管理者権限を持つかを示すフラグ。 | デフォルトは`false`。管理者による手動設定が必要。 |
+ボードゲームのマスターデータを格納します。
+※ `tags` カラムは、アプリ独自のタグ付けとして使用します。BGG由来の `mechanics` や `categories` とは区別して管理することを推奨しますが、運用上 `tags` に統合することも可能です。今回は明確化のため別途カラム定義しています。
 
-### 4.2. `boardGames`
+| 論理名 (物理名)                    | データ型    | 必須 | 説明                             | 備考                   |
+| :--------------------------------- | :---------- | :--- | :------------------------------- | :--------------------- |
+| ゲームID (id)                      | `uuid`      | ✔    | ボードゲームを一意に識別するID   | 自動生成               |
+| ゲーム名 (name)                    | `text`      | ✔    | ゲームの名称                     |                        |
+| 最小プレイ人数 (min_players)       | `int`       | ✔    | プレイ可能な最小人数             |                        |
+| 最大プレイ人数 (max_players)       | `int`       | ✔    | プレイ可能な最大人数             |                        |
+| 標準プレイ時間 (play_time_minutes) | `int`       | ✔    | プレイにかかる標準的な時間（分） |                        |
+| タグ (tags)                        | `text[]`    |      | アプリ独自のタグ                 |                        |
+| 作成者ID (created_by)              | `uuid`      | ✔    | データを登録したユーザーのID     | `auth.users.id` を参照 |
+| 作成日時 (created_at)              | `timestamp` |      | レコード作成日時                 |                        |
+| BGG ID (bgg_id)                    | `text`      |      | BoardGameGeek上のID              | ユニーク               |
+| 画像URL (image_url)                | `text`      |      | ゲームのメイン画像URL            | BGGより取得            |
+| サムネイルURL (thumbnail_url)      | `text`      |      | ゲームのサムネイル画像URL        | BGGより取得            |
+| 説明 (description)                 | `text`      |      | ゲームの説明文                   | BGGより取得            |
+| 最小プレイ時間 (min_playtime)      | `int`       |      | BGGデータ上の最小プレイ時間      | BGGより取得            |
+| 最大プレイ時間 (max_playtime)      | `int`       |      | BGGデータ上の最大プレイ時間      | BGGより取得            |
+| 発行年 (year_published)            | `int`       |      | ゲームの発行年                   | BGGより取得            |
+| デザイナー (designers)             | `text[]`    |      | デザイナー名リスト               | BGGより取得            |
+| アーティスト (artists)             | `text[]`    |      | アーティスト名リスト             | BGGより取得            |
+| パブリッシャー (publishers)        | `text[]`    |      | パブリッシャー名リスト           | BGGより取得            |
+| メカニクス (mechanics)             | `text[]`    |      | ゲームメカニクス                 | BGGより取得            |
+| カテゴリ (categories)              | `text[]`    |      | ゲームカテゴリ                   | BGGより取得            |
+| BGG平均評価 (average_rating)       | `double`    |      | BGG上の平均評価                  | BGGより取得            |
+| BGG重ゲー度 (complexity)           | `double`    |      | BGG上のComplexity (Weight)       | BGGより取得            |
 
-ボードゲームのカタログ情報（マスターデータ）を格納するコレクション。
+### 4.3. ユーザー別ゲーム状態 (user_board_game_states)
 
--   **コレクションパス**: `/boardGames`
--   **ドキュメントID**: Firestoreによって自動生成される一意のID (`auto-id`) を使用します。
--   **対応インターフェース**: `IBoardGameData`
+ユーザーごとのゲームに対する状態（評価、プレイ状況など）を格納します。
 
-#### フィールド定義
+| 論理名 (物理名)          | データ型    | 必須 | 説明                           | 備考                     |
+| :----------------------- | :---------- | :--- | :----------------------------- | :----------------------- |
+| ID (id)                  | `uuid`      | ✔    | レコードID                     | 自動生成                 |
+| ユーザーID (user_id)     | `uuid`      | ✔    | 状態を保持するユーザーのID     | `Link to profiles.id`    |
+| ゲームID (board_game_id) | `uuid`      | ✔    | 対象のボードゲームID           | `Link to board_games.id` |
+| プレイ済み (played)      | `boolean`   |      | プレイ経験の有無               |                          |
+| 評価 (evaluation)        | `int`       |      | 5段階評価 (1-5)                |                          |
+| コメント (comment)       | `text`      |      | ゲームに対するひとことコメント |                          |
+| 更新日時 (updated_at)    | `timestamp` |      | レコードの最終更新日時         |                          |
 
-| フィールド名 | データ型 | 必須 | 説明 | 備考 |
-| :--- | :--- | :--- | :--- | :--- |
-| `name` | `string` | ✔ | ボードゲームの正式名称。 | 全文検索の対象。 |
-| `min` | `number` | ✔ | プレイ可能な最小人数。 | |
-| `max` | `number` | ✔ | プレイ可能な最大人数。 | |
-| `time` | `number` | ✔ | おおよそのプレイ時間（分単位）。 | |
-| `tags` | `array<string>` | | ゲームの分類や特徴を示すタグの配列。 | 例: `["協力型", "戦略"]`。検索対象。 |
-| `ownerName` | `string` | | このボードゲームの主な所有者名。 | ユーザーのニックネームが変更されても追従しない、登録時のスナップショット情報。 |
+### 4.4. 対戦記録 (matches)
 
-### 4.3. `userBoardGames`
+対戦記録（マッチ）の基本情報を格納します。
 
-ユーザーとボードゲームの関連情報（多対多の関係）を格納する中間コレクション。
+| 論理名 (物理名)          | データ型    | 必須 | 説明                       | 備考                     |
+| :----------------------- | :---------- | :--- | :------------------------- | :----------------------- |
+| マッチID (id)            | `uuid`      | ✔    | 対戦記録ID                 | 自動生成                 |
+| ゲームID (board_game_id) | `uuid`      | ✔    | プレイしたゲームのID       | `Link to board_games.id` |
+| 対戦日時 (date)          | `timestamp` | ✔    | ゲームをプレイした日時     |                          |
+| 場所 (location)          | `text`      |      | プレイした場所             |                          |
+| メモ (note)              | `text`      |      | 対戦に関するメモ           |                          |
+| 対戦写真URL (image_url)  | `text`      |      | 対戦時の写真URL            | Supabase Storage         |
+| 作成者ID (created_by)    | `uuid`      | ✔    | 記録を作成したユーザーのID | `auth.users.id` を参照   |
+| 作成日時 (created_at)    | `timestamp` |      | レコード作成日時           |                          |
 
--   **コレクションパス**: `/userBoardGames`
--   **ドキュメントID**: `${userId}_${boardGameId}` の形式でクライアントサイドで生成される複合ID。これにより、特定ユーザーの特定ゲームに対する評価が一意に定まることを保証します。
--   **対応インターフェース**: `IBoardGameUserFirestore`
+### 4.5. 対戦参加プレイヤー (match_players)
 
-#### フィールド定義
+各マッチに参加したプレイヤーごとのスコアや勝敗情報を格納します。
 
-| フィールド名 | データ型 | 必須 | 説明 | 備考 |
-| :--- | :--- | :--- | :--- | :--- |
-| `userId` | `string` | ✔ | この記録を所有するユーザーのID (UID)。 | クエリの `where` 句で使用。 |
-| `boardGameId` | `string` | ✔ | 対象となるボードゲームのID。 | クエリの `where` 句で使用。 |
-| `played` | `boolean` | ✔ | ユーザーがこのゲームをプレイしたことがあるか。 | デフォルトは`false`。 |
-| `evaluation` | `number` | ✔ | ユーザーによる5段階評価 (1-5)。 | 0は未評価を表す。 |
-| `comment` | `string` | | ユーザーが残したひとことコメント（30文字以内）。 | |
+| 論理名 (物理名)            | データ型 | 必須 | 説明                     | 備考                       |
+| :------------------------- | :------- | :--- | :----------------------- | :------------------------- |
+| ID (id)                    | `uuid`   | ✔    | レコードID               | 自動生成                   |
+| マッチID (match_id)        | `uuid`   | ✔    | 紐づく対戦記録のID       | `Link to matches.id`       |
+| ユーザーID (user_id)       | `uuid`   |      | アプリユーザーの場合のID | 登録済みユーザーの場合のみ |
+| プレイヤー名 (player_name) | `text`   | ✔    | プレイヤーの名前         | 未登録ユーザーまたは表示名 |
+| スコア (score)             | `text`   |      | ゲームのスコア           | フリーフォーマット         |
+| 順位 (rank)                | `int`    |      | 最終順位                 | 1位、2位…                  |
+| 役職 (role)                | `text`   |      | ゲーム内の役職や担当     |                            |
 
-## 5. クライアントサイドのデータモデル
+### 4.6. 所有ゲーム (owned_games)
 
-`BoardgameService`によって、上記コレクションから取得したデータはクライアントサイドで結合され、以下のインターフェースを持つリッチなオブジェクトとしてコンポーネントに提供されます。
+どのユーザーがどのゲームを所有しているかを管理します。
 
--   **対応インターフェース**: `IBoardGame`
+| 論理名 (物理名)          | データ型    | 必須 | 説明             | 備考                    |
+| :----------------------- | :---------- | :--- | :--------------- | :---------------------- |
+| ID (id)                  | `uuid`      | ✔    | レコードID       | 自動生成                |
+| ユーザーID (user_id)     | `uuid`      | ✔    | 所有ユーザーのID | `profiles.id` を参照    |
+| ゲームID (board_game_id) | `uuid`      | ✔    | 所有ゲームのID   | `board_games.id` を参照 |
+| 所有日時 (created_at)    | `timestamp` |      | データ登録日時   |                         |
 
-| フィールド名 | データ型 | 説明 | 派生元 |
-| :--- | :--- | :--- | :--- |
-| `id` | `string` | ボードゲームID | `boardGames` |
-| `name` | `string` | 名前 | `boardGames` |
-| `min` | `number` | 最小人数 | `boardGames` |
-| `max` | `number` | 最大人数 | `boardGames` |
-| `time` | `number` | 時間 | `boardGames` |
-| `tags` | `array<string>` | タグ | `boardGames` |
-| `ownerName` | `string` | 所有者名 | `boardGames` |
-| `played` | `boolean` | ログインユーザーのプレイ状況 | `userBoardGames` |
-| `evaluation` | `number` | ログインユーザーの評価 | `userBoardGames` |
-| `comment` | `string` | ログインユーザーのコメント | `userBoardGames` |
-| `averageEvaluation` | `number` | 全ユーザーの平均評価 | `userBoardGames` (集計) |
-| `anyPlayed` | `boolean` | いずれかのユーザーがプレイしたか | `userBoardGames` (集計) |
+### 4.7. フレンド関係 (friendships)
 
-## 6. セキュリティルール
+ユーザー同士のフレンド状態を管理します。
 
-Firestoreのセキュリティルールは、以下の原則に基づいて設定されます。
+| 論理名 (物理名)       | データ型    | 必須 | 説明                              | 備考                       |
+| :-------------------- | :---------- | :--- | :-------------------------------- | :------------------------- |
+| ID (id)               | `uuid`      | ✔    | レコードID                        | 自動生成                   |
+| 申請者 (sender_id)    | `uuid`      | ✔    | 申請を送ったユーザーのID          | `profiles.id` を参照       |
+| 受信者 (receiver_id)  | `uuid`      | ✔    | 申請を受け取ったユーザーのID      | `profiles.id` を参照       |
+| 状態 (status)         | `text`      | ✔    | 'pending', 'accepted', 'rejected' | 申請中, 承認済み, 拒否済み |
+| 申請日時 (created_at) | `timestamp` |      | レコード作成日時                  |                            |
 
--   **デフォルト拒否**: 明示的に許可されていない限り、すべての読み書き操作は拒否されます。
--   **認証必須**: `users`コレクションの読み取りを除き、すべてのデータベースアクセスにはFirebase Authenticationによる認証が必要です。
--   **データ所有権の強制**: `userBoardGames`のドキュメントは、その`userId`フィールドが認証済みユーザーのUIDと一致する場合にのみ、作成・更新・削除が可能です。
--   **管理者権限**: `boardGames`コレクションの作成・更新・削除は、`users`ドキュメントの`isAdmin`フラグが`true`のユーザーにのみ許可されます。
+## 5. セキュリティ (RLS Policies)
 
-```
-// Firestoreセキュリティルールの例
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
+SupabaseのRow Level Security (RLS) を有効化し、以下のポリシーを適用しています。
 
-    // ユーザーは自身のユーザー情報のみ更新可能。他人の情報は読み取り専用。
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow update: if request.auth.uid == userId;
-      allow create, delete: if false; // 作成と削除は許可しない
-    }
+- **全テーブル共通**:
+  - `SELECT`: 公開情報（認証不要）または Authenticated なユーザーは基本的に参照可能。
+  - `INSERT/UPDATE/DELETE`: 認証済みユーザーのみ許可。
 
-    // 認証済みユーザーはボードゲーム情報を読み取り可能。
-    // 書き込みは管理者のみ許可。
-    match /boardGames/{boardGameId} {
-      allow read: if request.auth != null;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
+- **ユーザープロフィール (profiles)**:
+  - `INSERT/UPDATE` は本人のみ (`auth.uid() = id`)。
 
-    // ユーザーは自身の評価情報のみ作成・更新・削除が可能。
-    match /userBoardGames/{docId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth.uid == request.resource.data.userId;
-    }
-  }
-}
-```
+- **ユーザー別ゲーム状態 (user_board_game_states)**:
+  - `INSERT/UPDATE` は本人のデータのみ (`auth.uid() = user_id`)。
 
-## 7. 主要なクエリパターン
+- **対戦記録 (matches)**:
+  - `INSERT`: 認証済みユーザーのみ。
+  - `UPDATE/DELETE`: 作成者本人のみ (`auth.uid() = created_by`)。
 
-このデータベース設計で想定される主要なクエリは以下の通りです。
+- **対戦参加プレイヤー (match_players)**:
+  - `UPDATE/DELETE`: 親となるMatchの作成者のみ (`auth.uid() = created_by` via join)。
 
-1.  **全ボードゲームリストの表示 (`ListComponent`)**:
-    -   `boardGames` コレクションから全ドキュメントを取得します。
-    -   ログインユーザーの `userId` を使って、`userBoardGames` コレクションから該当ユーザーの全ドキュメント (`where("userId", "==", userId)`) を取得します。
-    -   クライアントサイドで、`boardGameId` をキーにして2つのデータストリームを結合し、`IBoardGame`の配列を生成します。
-    -   さらに、各ゲームについて `userBoardGames` から全ユーザーの評価 (`where("boardGameId", "==", game.id)`) を取得し、平均評価を都度計算して結合します。
+- **所有ゲーム (owned_games)**:
+  - `SELECT`: 全員（公開情報の集計などのため）。
+  - `INSERT/DELETE`: 本人のみ (`auth.uid() = user_id`)。
 
-2.  **ユーザープロファイルの取得 (`AuthService`)**:
-    -   `users` コレクションから特定の `userId` のドキュメントを直接取得し、ユーザー情報をアプリケーション全体で共有します。
+## 6. ストレージ (Supabase Storage)
 
-3.  **データ更新 (`EditUserDataDialog`)**:
-    -   **ユーザー評価の更新**: `userBoardGames` の特定のドキュメント (`${userId}_${boardGameId}`) を直接更新します。
-    -   **ゲーム情報の更新 (管理者)**: `boardGames` の特定のドキュメントを直接更新します。
+対戦記録などに添付する画像を保存するために使用します。
+
+### 6.1. バケット: `match_images`
+
+- **公開設定**: 公開 (Public) - URLで画像を参照できるようにするため。
+- **制限**:
+  - ファイルサイズ: 最大 5MB
+  - ファイル形式: `image/*` (png, jpeg, webp等)
+- **RLSポリシー**:
+  - `SELECT`: 誰でも参照可能。
+  - `INSERT`: 認証済みユーザー。
+  - `UPDATE/DELETE`: アップロードした本人のみ (`auth.uid()` によるパスのプレフィックス一致など)。
+
+### 6.2. バケット: `profile_images`
+
+- **公開設定**: 公開 (Public) - URLでプロフィール画像を参照できるようにするため。
+- **制限**:
+  - ファイルサイズ: 最大 2MB
+  - ファイル形式: `image/*`
+- **RLSポリシー**:
+  - `SELECT`: 誰でも参照可能。
+  - `INSERT/UPDATE/DELETE`: 本人のみ (`auth.uid()` によるパスの制限)。
