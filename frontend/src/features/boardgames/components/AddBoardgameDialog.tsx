@@ -205,7 +205,7 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
                         const val = typeof newValue === 'string' ? newValue : newValue?.name || '';
                         onChange(val);
                         setInputValue(val);
-                        onGameSelected(newValue);
+                        // onGameSelected(newValue); // Removed
                     }}
                     renderInput={(params) => (
                         <TextField
@@ -363,7 +363,5 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
           </Box>
       </form>
     </BaseDialog>
-  );
-};
   );
 };

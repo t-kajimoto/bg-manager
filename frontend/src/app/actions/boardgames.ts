@@ -506,7 +506,7 @@ export async function deleteMatch(matchId: string) {
   }
 }
 
-export async function getMatches(boardGameId?: string, userId?: string) {
+export async function getMatchesAction(boardGameId?: string, userId?: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -529,7 +529,9 @@ export async function getMatches(boardGameId?: string, userId?: string) {
     }
 
     // 閲覧対象のユーザーID（指定がない場合は自分自身）
-    const targetUserId = userId || user.id;
+    const targetUserId = userId || user?.id; // userがnullの場合はundefinedになるが、その後のロジックで考慮が必要
+
+    if (!targetUserId) return []; // ユーザーIDが特定できない場合は空配列を返す
 
     if (targetUserId) {
       // 1. まず、そのユーザーが参加者(player)として登録されているマッチのIDリストを取得

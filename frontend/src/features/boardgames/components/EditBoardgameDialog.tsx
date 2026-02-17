@@ -233,5 +233,3 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
     </BaseDialog>
   );
 };
-  );
-};

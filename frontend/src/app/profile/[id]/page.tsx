@@ -46,7 +46,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             return;
           }
           setProfile(result.data);
-          setIsFriend(result.isFriend);
+          setIsFriend(result.isFriend ?? false);
         }
       } catch (err) {
         console.error('Failed to fetch profile:', err);

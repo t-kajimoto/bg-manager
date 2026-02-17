@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, Typography, List, ListItem, ListItemText, Divider, Box, Chip, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { getMatches } from '@/app/actions/boardgames';
+import { getMatchesAction } from '@/app/actions/boardgames';
 import { IMatch } from '@/features/matches/types';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -18,7 +18,8 @@ export const MatchList = ({ onEdit, userId }: MatchListProps) => {
   const [loading, setLoading] = useState(true);
 
   const fetchMatches = async () => {
-    const { data } = await getMatches(undefined, userId);
+    // @ts-ignore
+    const { data } = await getMatchesAction(null, userId);
     if (data) {
       setMatches(data as any);
     }

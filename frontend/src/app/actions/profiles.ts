@@ -67,6 +67,11 @@ export interface UpdateProfileData {
   display_name: string;
   discriminator: string;
   bio: string;
+  visibility_games: 'public' | 'friends' | 'private';
+  visibility_matches: 'public' | 'friends' | 'private';
+  visibility_friends: 'public' | 'friends' | 'private';
+  visibility_user_list: 'public' | 'friends' | 'private';
+  avatar_url?: string;
 }
 
 export async function updateProfile(profileData: UpdateProfileData) {

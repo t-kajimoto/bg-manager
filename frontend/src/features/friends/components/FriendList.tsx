@@ -13,10 +13,6 @@ import { getFriendships, IFriendship, sendFriendRequest, respondToFriendRequest,
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { BaseDialog } from '@/components/ui/BaseDialog';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
-import { getFriendships, IFriendship, sendFriendRequest, respondToFriendRequest, getFriendshipsByUserId } from '@/app/actions/friends';
-import { useAuth } from '@/contexts/AuthContext';
 
 export const FriendList = ({ userId }: { userId?: string }) => {
   const { customUser, user: authUser } = useAuth();

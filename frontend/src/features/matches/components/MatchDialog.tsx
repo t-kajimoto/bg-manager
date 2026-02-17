@@ -175,7 +175,6 @@ export const MatchDialog = ({ open, onClose, onSuccess, boardGames, initialData,
     onClose();
   };
 
-  return (
   const actionButtons = (
     <>
       <Button onClick={handleClose} disabled={loading} color="inherit">キャンセル</Button>
@@ -338,7 +337,5 @@ export const MatchDialog = ({ open, onClose, onSuccess, boardGames, initialData,
           </Box>
       </form>
     </BaseDialog>
-  );
-};
   );
 };
