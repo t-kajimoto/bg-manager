@@ -1,8 +1,8 @@
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import Home from './page';
-import { useBoardgames } from '@/hooks/useBoardgames';
-import { IBoardGame } from '@/types/boardgame';
+import { useBoardgames } from '@/features/boardgames/hooks/useBoardgames';
+import { IBoardGame } from '@/features/boardgames/types';
 
 // ==========================================================================================
 // テスト用のモック設定
@@ -11,7 +11,7 @@ import { IBoardGame } from '@/types/boardgame';
 // useBoardgamesフックをモック化します。
 // これにより、実際のフックのロジック（Firestoreへのアクセスなど）を実行せず、
 // テストケースごとに都合の良い値を返させることができます。
-jest.mock('@/hooks/useBoardgames');
+jest.mock('@/features/boardgames/hooks/useBoardgames');
 
 // Headerコンポーネントをモック化します。
 // Homeページのテストでは、Headerコンポーネント自体の動作は関心の対象外なので、
@@ -73,7 +73,7 @@ describe('Home Page', () => {
   // ------------------------------------------------------------------------------------------
   // テストケース1: ローディング状態の表示
   // ------------------------------------------------------------------------------------------
-  it('ローディング中はスピナーが表示されること', () => {
+  it('ローディング中はスケルトンが表示されること', () => {
     // フックがローディング状態を返すように設定
     mockUseBoardgames.mockReturnValue({
       boardGames: [],
@@ -83,8 +83,8 @@ describe('Home Page', () => {
 
     render(<Home />);
 
-    // "progressbar" のロールを持つ要素（MUIのCircularProgress）がドキュメント内に存在することを確認
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    // スケルトンコンポーネントが表示されていることを確認
+    expect(screen.getByTestId('board-game-skeleton')).toBeInTheDocument();
   });
 
   // ------------------------------------------------------------------------------------------
@@ -157,5 +157,45 @@ describe('Home Page', () => {
     // getAllByTextで複数の要素を取得して、存在を確認
     expect(screen.getAllByText('あなたの評価').length).toBeGreaterThan(0);
     expect(screen.getAllByText('平均評価').length).toBeGreaterThan(0);
+  });
+
+  // ------------------------------------------------------------------------------------------
+  // テストケース5: 検索機能
+  // ------------------------------------------------------------------------------------------
+  it('検索ボックスに入力するとリストがフィルタリングされること', () => {
+    mockUseBoardgames.mockReturnValue({
+      boardGames: mockBoardGames,
+      loading: false,
+      error: null,
+    });
+    render(<Home />);
+
+    // 初期状態は2件
+    expect(screen.getByText('カタン')).toBeInTheDocument();
+    expect(screen.getByText('コードネーム')).toBeInTheDocument();
+
+    // 検索入力
+    const searchInput = screen.getByLabelText('検索');
+    fireEvent.change(searchInput, { target: { value: 'カタン' } });
+
+    // カタンのみ表示
+    expect(screen.getByText('カタン')).toBeInTheDocument();
+    expect(screen.queryByText('コードネーム')).not.toBeInTheDocument();
+  });
+
+  // ------------------------------------------------------------------------------------------
+  // テストケース6: ガチャ機能
+  // ------------------------------------------------------------------------------------------
+  it('ガチャボタンをクリックするとダイアログが開くこと', () => {
+    mockUseBoardgames.mockReturnValue({
+      boardGames: mockBoardGames,
+      loading: false,
+      error: null,
+    });
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'ガチャ' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('ボドゲガチャ')).toBeInTheDocument();
   });
 });

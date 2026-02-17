@@ -1,0 +1,21 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: <%= ENV.fetch("POSTGRES_USER") { "postgres" } %>
+  password: <%= ENV.fetch("POSTGRES_PASSWORD") { "password" } %>
+  host: <%= ENV.fetch("POSTGRES_HOST") { "localhost" } %>
+
+development:
+  <<: *default
+  database: haridice_development
+
+test:
+  <<: *default
+  database: haridice_test
+
+production:
+  <<: *default
+  database: haridice_production
+  username: haridice
+  password: <%= ENV["HARIDICE_DATABASE_PASSWORD"] %>

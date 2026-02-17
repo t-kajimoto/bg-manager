@@ -1,62 +1,142 @@
-# Angular to Next.js Migration Plan
+# Supabase移行 & バックエンドアーキテクチャ設計書
 
-This document outlines the strategy and step-by-step plan for re-architecting the HARIDICE application from Angular to Next.js and React.
+本書は、HARIDICEアプリケーションのバックエンドをFirebase (Firestore) からSupabase (PostgreSQL) へ移行するための設計および実装計画をまとめたものです。
 
-## 1. Basic Policy
+## 1. 目的
 
--   The migration will respect the existing design philosophy, especially the deep integration with Firebase, while rebuilding the frontend according to React/Next.js best practices.
--   The UI will be reimplemented using **MUI (Material-UI)**, a popular React UI library, to maintain a consistent look and feel with the original Angular Material design.
--   The data flow and state management architecture will be transitioned from Angular's Service-based model to one centered around **React Hooks and the Context API**.
+-   **拡張性のあるバックエンド**: クライアント主導のNoSQLアーキテクチャから、複雑なクエリやリレーションをサポートする構造化されたリレーショナルデータベース (RDB) へ移行します。
+-   **ソーシャル機能**: フレンドシステムやゲームライブラリの公開機能など、Firestoreでは効率的な実装が難しい機能を実現します。
+-   **詳細な記録機能**: ゲームごとの評価とは別に、日々のプレイ記録（戦績）を写真付きで残せるようにします。
+-   **セキュリティ**: 行レベルセキュリティ (RLS) ポリシーを実装し、データの公開範囲（非公開/フレンドのみ/全体公開）を厳密に管理します。
 
-## 2. Technology Stack Selection
+## 2. データベーススキーマ設計 (PostgreSQL)
 
--   **Framework**: Next.js (latest stable version, with App Router)
--   **UI Library**: MUI (Material-UI)
--   **State Management**:
-    -   Global state (e.g., authentication): React Context API
-    -   Local UI state: `useState`, `useReducer`
-    -   Server state & data fetching: Custom Hooks wrapping the Firebase SDK's real-time listeners. Initially, we will not introduce additional libraries like SWR or React Query to keep the stack lean.
--   **Forms**: React Hook Form
--   **Styling**: SCSS Modules, leveraging the existing `styles.scss`.
+### 2.1. ER図の概要
 
-## 3. New Architecture Design
+```mermaid
+erDiagram
+    profiles ||--o{ library_entries : "所持・評価"
+    profiles ||--o{ play_logs : "プレイ記録"
+    profiles ||--o{ friendships : "申請"
+    profiles ||--o{ friendships : "承認"
+    games ||--o{ library_entries : "参照"
+    games ||--o{ play_logs : "参照"
 
-### 3.1. Directory Structure
+    profiles {
+        uuid id PK "auth.users.idを参照"
+        string username
+        string avatar_url
+        string default_visibility "play_logsなどのデフォルト公開設定"
+        timestamp created_at
+    }
 
-The project will follow the standard directory structure for the Next.js App Router.
+    games {
+        uuid id PK
+        string title
+        string image_url
+        int min_players
+        int max_players
+        string bgg_id "外部ID (BoardGameGeek)"
+        timestamp created_at
+    }
 
+    library_entries {
+        uuid id PK
+        uuid user_id FK
+        uuid game_id FK
+        string status "owned(所持) / wanted(欲しい) / played(プレイ済)"
+        int rating "1-10 (そのゲームに対する総合評価)"
+        text comment "ゲーム全体へのコメント"
+        string visibility "private / friends / public"
+        timestamp updated_at
+        string unique_key "user_id_game_id (Unique)"
+    }
+
+    play_logs {
+        uuid id PK
+        uuid user_id FK
+        uuid game_id FK
+        date played_on "プレイ日"
+        text memo "戦績や感想（フリーフォーマット）"
+        string image_path "Storage内の画像パス (1枚まで)"
+        string visibility "private / friends / public"
+        timestamp created_at
+    }
+
+    friendships {
+        uuid user_id FK
+        uuid friend_id FK
+        string status "pending(申請中) / accepted(承認済)"
+        timestamp created_at
+    }
 ```
-/
-|-- /app            # Pages, layouts, and UI components for routes
-|   |-- /_components # Private components for pages (e.g., dialogs)
-|   |-- layout.tsx
-|   `-- page.tsx
-|-- /components     # Reusable, shared UI components (e.g., buttons, inputs)
-|-- /contexts       # React Context providers (e.g., AuthContext)
-|-- /hooks          # Custom Hooks for business logic and data fetching
-|   |-- useAuth.ts
-|   `-- useBoardgames.ts
-|-- /lib            # Library code, utility functions
-|   `-- /firebase   # Firebase SDK initialization and configuration
-`-- /types          # TypeScript type definitions
-```
 
-### 3.2. Logic Migration Strategy
+### 2.2. テーブル定義とRLSポリシー
 
--   **`AuthService`**: Its responsibilities will be replaced by an `AuthContext` to provide global authentication state (`user`, `isAdmin`) and a `useAuth` hook to provide functions like `login` and `logout`.
--   **`BoardgameService`**: The logic for communicating with Firestore and joining data collections will be encapsulated within a `useBoardgames` custom hook. This hook will return the list of board games combined with user-specific data, ready for rendering.
+#### `profiles` (ユーザープロフィール)
+-   **RLS**:
+    -   `SELECT`: 公開（ユーザー名やアバターは誰でも参照可能）。
+    -   `UPDATE`: 本人のみ更新可能。
 
-### 3.3. Component Re-implementation
+#### `games` (ゲームマスタ)
+-   **RLS**:
+    -   `SELECT`: 公開。
+    -   `INSERT`: 認証済みユーザー（存在しないゲームは誰でも登録可能）。
+    -   `UPDATE`: 管理者または信頼されたユーザーのみ。
 
--   **`AppComponent` (Header/Toolbar)**: Will be reimplemented as a common layout component within `/app/layout.tsx`.
--   **`ListComponent` (Main Page)**: Will be the main page component at `/app/page.tsx`.
--   **Dialog Components**: Each dialog will be rebuilt as a separate React component using MUI's `Dialog` component, with its open/close state managed by the parent page component.
+#### `library_entries` (所持リスト・評価)
+-   **役割**: 「このゲームを持ってる」「星5つ」といった、ゲームそのものへのステータス管理。
+-   **RLS**:
+    -   `SELECT`: `visibility` 設定に基づく（publicなら全員、friendsならフレンドのみ）。
+    -   `INSERT/UPDATE/DELETE`: 本人のみ。
 
-## 4. Step-by-Step Migration Plan
+#### `play_logs` (プレイ記録・戦績)
+-   **役割**: 「〇月×日に遊んで勝った！」といった、個別のプレイ体験の記録。
+-   **機能**: フリーフォーマットのメモ、写真添付(1枚)。
+-   **RLS**:
+    -   `SELECT`: `visibility` 設定に基づく。
+    -   `INSERT/UPDATE/DELETE`: 本人のみ。
 
-1.  **Environment Setup**: Create a new Next.js project and install the necessary dependencies (MUI, Firebase SDK, React Hook Form, SCSS). Configure Firebase credentials.
-2.  **Authentication**: Implement the core authentication flow. Create the `AuthContext` and `useAuth` hook to handle Google login/logout and provide user information globally.
-3.  **Read-Only Data Display**: Develop the `useBoardgames` hook to fetch and combine data from the `boardGames` and `userBoardGames` collections. Implement the main list view to display the games in a read-only fashion.
-4.  **Data Update Functionality**: Re-implement the dialog components one by one to handle data mutations (e.g., editing user evaluations, adding/editing board games for admins).
-5.  **Implement Remaining Features**: Re-implement auxiliary features such as the "Bodoge Gacha".
-6.  **Final Touches & CI/CD**: Ensure all features are working, refine styles, and configure GitHub Actions for automated deployment to Firebase Hosting.
+#### `friendships` (フレンド関係)
+-   **RLS**:
+    -   `SELECT`: 当事者のみ。
+    -   `INSERT`: 申請者のみ。
+    -   `UPDATE`: 受信者（承認時）または申請者（キャンセル時）。
+
+## 3. API設計 (Server Actions)
+
+Next.js Server Actions をAPI層として利用し、Supabaseと直接やり取りします。
+
+### 3.1. ゲーム管理
+-   `searchGames(query: string)`: ローカルDBまたは外部API (BGG) からゲームを検索。
+-   `registerGame(gameData: Game)`: 新しいゲームをマスタに登録。
+
+### 3.2. ライブラリ・評価管理
+-   `upsertLibraryEntry(gameId: string, status: string, rating?: number, comment?: string)`: 所持状況や評価を更新。
+-   `getLibrary(userId: string)`: 指定ユーザーのライブラリを取得（RLSに従う）。
+
+### 3.3. プレイ記録管理
+-   `addPlayLog(data: PlayLogInput)`: プレイ記録を作成（画像アップロード含む）。
+-   `getPlayLogs(userId: string, gameId?: string)`: プレイ記録の一覧を取得。
+-   `updatePlayLog(logId: string, data: Partial<PlayLogInput>)`: 記録の修正。
+-   `deletePlayLog(logId: string)`: 記録の削除。
+
+### 3.4. ソーシャル機能
+-   `sendFriendRequest(targetUserId: string)`: フレンド申請。
+-   `acceptFriendRequest(requestId: string)`: 申請承認。
+-   `getFriends()`: フレンド一覧取得。
+
+## 4. 実装戦略
+
+1.  **Supabaseセットアップ**:
+    -   プロジェクト作成、テーブル・RLS作成。
+    -   Storageバケット作成（プレイ記録画像用: `play-log-images`）。
+    -   Auth設定（Googleログイン）。
+
+2.  **フロントエンド統合**:
+    -   `@supabase/ssr` 導入。
+    -   `AuthContext` を Supabase Auth に置き換え。
+    -   既存の `useBoardgames` フックを Server Actions 経由に改修。
+
+3.  **データ移行**:
+    -   Firestoreからデータをエクスポートし、Supabaseへインポートするスクリプトを作成・実行。
