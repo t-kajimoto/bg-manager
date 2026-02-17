@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { IBoardGame } from '../types';
 import { useBoardgames } from './useBoardgames';
-import { useBoardgameManager } from './useBoardgameManager';
 import { GachaCondition } from '@/features/gacha/components/BodogeGachaDialog';
+import { deleteBoardGame } from '@/app/actions/boardgames';
 
-export const useBoardGamePage = () => {
-  const { boardGames, loading, error } = useBoardgames();
-  const { deleteBoardgame, loading: isDeleting } = useBoardgameManager();
+export const useBoardGamePage = (userId?: string) => {
+  const { boardGames, loading, error, refetch } = useBoardgames(userId);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Dialog states
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -18,12 +18,15 @@ export const useBoardGamePage = () => {
 
   // Selection states
   const [selectedGame, setSelectedGame] = useState<IBoardGame | null>(null);
-  const [gachaResultGame, setGachaResultGame] = useState<IBoardGame | null>(null);
+  const [gachaResultGame, setGachaResultGame] = useState<IBoardGame | null>(
+    null,
+  );
 
   // Search & Sort states
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('name');
+  const [onlyOwned, setOnlyOwned] = useState(false);
 
   // Snackbar state
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -41,7 +44,10 @@ export const useBoardGamePage = () => {
 
   const handleDeleteConfirm = async () => {
     if (selectedGame) {
-      await deleteBoardgame(selectedGame.id);
+      setIsDeleting(true);
+      await deleteBoardGame(selectedGame.id);
+      await refetch();
+      setIsDeleting(false);
       setOpenDeleteConfirm(false);
       setSelectedGame(null);
     }
@@ -52,7 +58,9 @@ export const useBoardGamePage = () => {
     setOpenEvaluationDialog(true);
   };
 
-  const allTags = Array.from(new Set(boardGames.flatMap(g => g.tags || []))).sort();
+  const allTags = Array.from(
+    new Set(boardGames.flatMap((g) => g.tags || [])),
+  ).sort();
 
   const handleTagClick = (tag: string) => {
     if (!filterTags.includes(tag)) {
@@ -64,29 +72,53 @@ export const useBoardGamePage = () => {
     setFilterTags(filterTags.filter((tag) => tag !== tagToDelete));
   };
 
-  const filteredBoardGames = boardGames.filter(game => {
-    const query = searchQuery.toLowerCase();
-    const matchesSearch = game.name.toLowerCase().includes(query) || game.tags?.some(t => t.toLowerCase().includes(query));
-    const matchesTags = filterTags.length === 0 || filterTags.every(t => game.tags?.includes(t));
-    return matchesSearch && matchesTags;
-  }).sort((a, b) => {
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
-    if (sortBy === 'time') return a.time - b.time;
-    if (sortBy === 'evaluation') return (b.averageEvaluation || 0) - (a.averageEvaluation || 0);
-    return 0;
-  });
+  const filteredBoardGames = boardGames
+    .filter((game) => {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        game.name.toLowerCase().includes(query) ||
+        game.tags?.some((t) => t.toLowerCase().includes(query));
+      const matchesTags =
+        filterTags.length === 0 ||
+        filterTags.every((t) => game.tags?.includes(t));
+      const matchesOwned = !onlyOwned || game.isOwned;
+      return matchesSearch && matchesTags && matchesOwned;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'time') return a.time - b.time;
+      if (sortBy === 'evaluation')
+        return (b.averageEvaluation || 0) - (a.averageEvaluation || 0);
+      return 0;
+    });
 
   const handleGacha = (condition?: GachaCondition) => {
     setOpenGachaDialog(false);
     if (!condition) return;
 
-    const candidates = boardGames.filter(game => {
-      if (condition.players !== null && (game.min > condition.players || game.max < condition.players)) return false;
+    const candidates = boardGames.filter((game) => {
+      if (
+        condition.players !== null &&
+        (game.min > condition.players || game.max < condition.players)
+      )
+        return false;
       if (condition.playStatus === 'played' && !game.played) return false;
       if (condition.playStatus === 'unplayed' && game.played) return false;
-      if (condition.tags.length > 0 && !condition.tags.every(t => game.tags?.includes(t))) return false;
-      if (game.time < condition.timeRange[0] || game.time > condition.timeRange[1]) return false;
-      if ((game.averageEvaluation || 0) < condition.ratingRange[0] || (game.averageEvaluation || 0) > condition.ratingRange[1]) return false;
+      if (
+        condition.tags.length > 0 &&
+        !condition.tags.every((t) => game.tags?.includes(t))
+      )
+        return false;
+      if (
+        game.time < condition.timeRange[0] ||
+        game.time > condition.timeRange[1]
+      )
+        return false;
+      if (
+        (game.averageEvaluation || 0) < condition.ratingRange[0] ||
+        (game.averageEvaluation || 0) > condition.ratingRange[1]
+      )
+        return false;
       return true;
     });
 
@@ -95,9 +127,13 @@ export const useBoardGamePage = () => {
       setGachaResultGame(winner);
       setOpenGachaResult(true);
     } else {
-      setSnackbarMessage("条件に合うゲームが見つかりませんでした。");
+      setSnackbarMessage('条件に合うゲームが見つかりませんでした。');
       setOpenSnackbar(true);
     }
+  };
+
+  const refreshData = async () => {
+    await refetch();
   };
 
   return {
@@ -108,25 +144,40 @@ export const useBoardGamePage = () => {
     filteredBoardGames,
     allTags,
     dialogState: {
-      openAddDialog, setOpenAddDialog,
-      openEditDialog, setOpenEditDialog,
-      openDeleteConfirm, setOpenDeleteConfirm,
-      openEvaluationDialog, setOpenEvaluationDialog,
-      openGachaDialog, setOpenGachaDialog,
-      openGachaResult, setOpenGachaResult,
+      openAddDialog,
+      setOpenAddDialog,
+      openEditDialog,
+      setOpenEditDialog,
+      openDeleteConfirm,
+      setOpenDeleteConfirm,
+      openEvaluationDialog,
+      setOpenEvaluationDialog,
+      openGachaDialog,
+      setOpenGachaDialog,
+      openGachaResult,
+      setOpenGachaResult,
     },
     selectionState: {
-      selectedGame, setSelectedGame,
-      gachaResultGame, setGachaResultGame,
+      selectedGame,
+      setSelectedGame,
+      gachaResultGame,
+      setGachaResultGame,
     },
     filterState: {
-      searchQuery, setSearchQuery,
-      filterTags, setFilterTags,
-      sortBy, setSortBy,
+      searchQuery,
+      setSearchQuery,
+      filterTags,
+      setFilterTags,
+      sortBy,
+      setSortBy,
+      onlyOwned,
+      setOnlyOwned,
     },
     snackbarState: {
-      openSnackbar, setOpenSnackbar,
-      snackbarMessage, setSnackbarMessage,
+      openSnackbar,
+      setOpenSnackbar,
+      snackbarMessage,
+      setSnackbarMessage,
     },
     handlers: {
       handleEditClick,
@@ -136,6 +187,7 @@ export const useBoardGamePage = () => {
       handleTagClick,
       handleTagDelete,
       handleGacha,
-    }
+      refreshData,
+    },
   };
 };

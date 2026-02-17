@@ -11,13 +11,14 @@ interface BoardGameListProps {
   games: IBoardGame[];
   loading: boolean;
   error: Error | null;
-  onEdit: (game: IBoardGame) => void;
-  onDelete: (game: IBoardGame) => void;
-  onEvaluation: (game: IBoardGame) => void;
+  onEdit?: (game: IBoardGame) => void;
+  onDelete?: (game: IBoardGame) => void;
+  onEvaluation?: (game: IBoardGame) => void;
   onTagClick: (tag: string) => void;
-  onAdd: () => void;
-  onClearFilter: () => void;
+  onAdd?: () => void;
+  onClearFilter?: () => void;
   isEmptyResult: boolean;
+  readOnly?: boolean;
 }
 
 export const BoardGameList = ({
@@ -30,7 +31,8 @@ export const BoardGameList = ({
   onTagClick,
   onAdd,
   onClearFilter,
-  isEmptyResult
+  isEmptyResult,
+  readOnly
 }: BoardGameListProps) => {
   const { customUser } = useAuth();
 
@@ -52,9 +54,11 @@ export const BoardGameList = ({
         <Typography variant="h6" color="text.secondary">
           条件に一致するゲームが見つかりませんでした。
         </Typography>
-        <Button onClick={onClearFilter} sx={{ mt: 2 }}>
-           条件をクリア
-        </Button>
+        {onClearFilter && (
+          <Button onClick={onClearFilter} sx={{ mt: 2 }}>
+             条件をクリア
+          </Button>
+        )}
       </Box>
     );
   }
@@ -65,7 +69,7 @@ export const BoardGameList = ({
          <Typography variant="h6" color="text.secondary">
           登録されているボードゲームはありません。
         </Typography>
-        {customUser?.isAdmin && (
+        {!readOnly && customUser && onAdd && (
           <Button variant="outlined" startIcon={<AddIcon />} onClick={onAdd} sx={{ mt: 2 }}>
             最初のゲームを追加
           </Button>
@@ -95,6 +99,7 @@ export const BoardGameList = ({
             onDelete={onDelete}
             onEvaluation={onEvaluation}
             onTagClick={onTagClick}
+            readOnly={readOnly}
           />
         </Box>
       ))}

@@ -3,6 +3,7 @@
 import { Box, TextField, InputAdornment, IconButton, MenuItem, Chip, Typography, Button } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
+import { FormControlLabel, Switch } from '@mui/material';
 
 interface BoardGameFilterProps {
   searchQuery: string;
@@ -12,6 +13,8 @@ interface BoardGameFilterProps {
   filterTags: string[];
   onTagDelete: (tag: string) => void;
   onClearTags: () => void;
+  onlyOwned: boolean;
+  onOnlyOwnedChange: (value: boolean) => void;
 }
 
 export const BoardGameFilter = ({
@@ -21,7 +24,9 @@ export const BoardGameFilter = ({
   onSortChange,
   filterTags,
   onTagDelete,
-  onClearTags
+  onClearTags,
+  onlyOwned,
+  onOnlyOwnedChange
 }: BoardGameFilterProps) => {
   return (
     <Box sx={{ mb: 3 }}>
@@ -60,6 +65,17 @@ export const BoardGameFilter = ({
           <MenuItem value="time">時間順</MenuItem>
           <MenuItem value="evaluation">評価順</MenuItem>
         </TextField>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={onlyOwned}
+              onChange={(e) => onOnlyOwnedChange(e.target.checked)}
+              color="primary"
+            />
+          }
+          label="所持のみ"
+          sx={{ minWidth: 120, ml: { sm: 1 } }}
+        />
       </Box>
 
       {filterTags.length > 0 && (
