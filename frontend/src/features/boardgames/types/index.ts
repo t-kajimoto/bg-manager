@@ -25,8 +25,34 @@ export interface IBoardGameData {
   time: number;
   /** ゲームの分類や特徴を示すタグの配列（例: 「協力型」「戦略」など） */
   tags?: string[];
-  /** このボードゲームを所有しているユーザーの名前（登録時のスナップショット） */
-  ownerName?: string;
+  /** BoardGameGeek ID */
+  bggId?: string;
+  /** ゲームの画像URL */
+  imageUrl?: string;
+  /** ゲームのサムネイルURL */
+  thumbnailUrl?: string;
+  /** ゲームの説明 */
+  description?: string;
+  /** 最小プレイ時間 */
+  minPlayTime?: number;
+  /** 最大プレイ時間 */
+  maxPlayTime?: number;
+  /** 発行年 */
+  yearPublished?: number;
+  /** デザイナー */
+  designers?: string[];
+  /** アーティスト */
+  artists?: string[];
+  /** パブリッシャー */
+  publishers?: string[];
+  /** メカニクス */
+  mechanics?: string[];
+  /** カテゴリ */
+  categories?: string[];
+  /** BGG平均評価 */
+  averageRating?: number;
+  /** BGG重ゲー度 */
+  complexity?: number;
 }
 
 /**
@@ -72,4 +98,6 @@ export interface IBoardGame extends IBoardGameData, IBoardGameUser {
   averageEvaluation?: number;
   /** 参加しているユーザーのうち、誰か一人でもこのゲームをプレイしたことがあるかを示すフラグ */
   anyPlayed?: boolean;
+  /** ログインユーザーが所有しているか */
+  isOwned?: boolean;
 }
