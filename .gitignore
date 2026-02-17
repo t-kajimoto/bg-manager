@@ -3,7 +3,11 @@
 # dependencies
 /node_modules
 /frontend/node_modules
-/backend/vendor/
+/backend/vendor/bundle
+/backend/log/*
+/backend/tmp/*
+/backend/.env*
+/backend/storage/*
 /.pnp
 .pnp.*
 .yarn/*
