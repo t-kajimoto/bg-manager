@@ -76,9 +76,21 @@ export async function searchBoardGame(query: string): Promise<BGGCandidate[]> {
       // Name can be an array if there are multiple names (primary/alternate)
       let name = 'Unknown';
       if (Array.isArray(item.name)) {
-        // console.log('Item name is array:', item.name);
-        const primary = item.name.find((n: any) => n.type === 'primary');
-        name = primary ? primary.value : item.name[0].value;
+        // 1. Try to find a Japanese name in alternate names
+        const japaneseName = item.name.find(
+          (n: any) =>
+            n.type === 'alternate' &&
+            /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(
+              n.value,
+            ),
+        );
+
+        if (japaneseName) {
+          name = japaneseName.value;
+        } else {
+          const primary = item.name.find((n: any) => n.type === 'primary');
+          name = primary ? primary.value : item.name[0].value;
+        }
       } else if (item.name) {
         name = item.name.value;
       }
@@ -157,8 +169,22 @@ export async function getBoardGameDetails(
     // Handle name (primary)
     let name = 'Unknown';
     if (Array.isArray(item.name)) {
-      const primary = item.name.find((n: any) => n.type === 'primary');
-      name = primary ? primary.value : item.name[0].value;
+      // 1. Try to find a Japanese name in alternate names
+      const japaneseName = item.name.find(
+        (n: any) =>
+          n.type === 'alternate' &&
+          /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(
+            n.value,
+          ),
+      );
+
+      // 2. If no Japanese name, look for primary
+      if (japaneseName) {
+        name = japaneseName.value;
+      } else {
+        const primary = item.name.find((n: any) => n.type === 'primary');
+        name = primary ? primary.value : item.name[0].value;
+      }
     } else if (item.name) {
       name = item.name.value;
     }

@@ -4,6 +4,7 @@ import { TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Aler
 import { addBoardGame } from '@/app/actions/boardgames';
 import { searchBoardGame, getBoardGameDetails, BGGCandidate, BGGDetails } from '@/app/actions/bgg';
 import { BaseDialog } from '@/components/ui/BaseDialog';
+import { translateText } from '@/app/actions/translate';
 
 interface AddBoardgameDialogProps {
   open: boolean;
@@ -39,6 +40,9 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Translation state
+  const [isTranslating, setIsTranslating] = useState(false);
 
   // Autocomplete states
   const [inputValue, setInputValue] = useState('');
@@ -218,18 +222,40 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
                         
                         if (newValue && typeof newValue !== 'string') {
                             setDetailsLoading(true);
-                            getBoardGameDetails(newValue.id).then((details) => {
+                            getBoardGameDetails(newValue.id).then(async (details) => {
                                 setDetailsLoading(false);
                                 if (details) {
                                     console.log('BGG Details fetched:', details);
                                     setSelectedBGGDetails(details);
+                                    
+                                    // Use the name from details which prioritizes Japanese
+                                    setValue('name', details.name); 
+                                    setInputValue(details.name); 
+
                                     setValue('min', details.minPlayers || 1);
                                     setValue('max', details.maxPlayers || 1);
                                     setValue('time', details.playTime || 0);
                                     setValue('minPlayTime', details.minPlayTime || 0);
                                     setValue('maxPlayTime', details.maxPlayTime || 0);
                                     setValue('yearPublished', details.year || new Date().getFullYear());
-                                    setValue('description', details.description || '');
+                                    
+                                    // Handle Description Translation
+                                    if (details.description) {
+                                      setIsTranslating(true);
+                                      // Do not set English description initially as per user request
+                                      try {
+                                        const translated = await translateText(details.description);
+                                        setValue('description', translated);
+                                      } catch (e) {
+                                        console.error('Translation failed', e);
+                                        setValue('description', details.description); // Fallback to English only on error
+                                      } finally {
+                                        setIsTranslating(false);
+                                      }
+                                    } else {
+                                        setValue('description', '');
+                                    }
+
                                     setValue('designers', details.designers?.join(', ') || '');
                                     setValue('artists', details.artists?.join(', ') || '');
                                     setValue('publishers', details.publishers?.join(', ') || '');
@@ -248,6 +274,7 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
                             setValue('bggId', undefined);
                             setValue('imageUrl', undefined);
                             setValue('thumbnailUrl', undefined);
+                            setValue('description', ''); 
                         }
                     }}
                     renderInput={(params) => (
@@ -355,7 +382,18 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
 
             <Controller name="description" control={control}
               render={({ field }) => (
-                <TextField {...field} label="説明" multiline rows={3} fullWidth disabled={loading || !!selectedBGGDetails} />
+                <TextField 
+                  {...field} 
+                  label="説明" 
+                  multiline 
+                  rows={3} 
+                  fullWidth 
+                  disabled={loading} // Allow editing even if BGG details selected, but maybe user wants to edit translation
+                  InputProps={{
+                    endAdornment: isTranslating ? <CircularProgress size={20} /> : null
+                  }}
+                  helperText={isTranslating ? "AI翻訳中..." : ""}
+                />
               )}
             />
 
