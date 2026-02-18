@@ -10,15 +10,12 @@ jest.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
-// useBoardgameManagerフックをモック化
-const mockUpdateUserEvaluation = jest.fn();
-jest.mock('@/features/boardgames/hooks/useBoardgameManager', () => ({
-  useBoardgameManager: () => ({
-    updateUserEvaluation: mockUpdateUserEvaluation,
-    loading: false,
-    error: null,
-  }),
+// モック
+jest.mock('@/app/actions/boardgames', () => ({
+  updateUserGameState: jest.fn(() => Promise.resolve({ error: null })),
 }));
+
+const mockUpdateUserGameState = require('@/app/actions/boardgames').updateUserGameState;
 
 const mockGame: IBoardGame = {
   id: 'game1', name: 'カタン', min: 3, max: 4, time: 60,
@@ -27,7 +24,7 @@ const mockGame: IBoardGame = {
 
 describe('EditUserEvaluationDialog', () => {
   beforeEach(() => {
-    mockUpdateUserEvaluation.mockClear();
+    mockUpdateUserGameState.mockClear();
   });
 
   it('フォームの初期値が正しく表示され、更新ボタンをクリックするとupdateUserEvaluationが呼ばれること', async () => {
@@ -47,12 +44,13 @@ describe('EditUserEvaluationDialog', () => {
     // 非同期処理を待機
     await screen.findByRole('heading', { name: /カタン の評価/ }); // ダイアログが閉じないことを確認
 
-    // updateUserEvaluationが正しい引数で呼び出されたか検証
-    expect(mockUpdateUserEvaluation).toHaveBeenCalledTimes(1);
-    expect(mockUpdateUserEvaluation).toHaveBeenCalledWith(
-      'user123',
-      'game1',
-      { played: true, evaluation: 5, comment: '面白い' }
-    );
+    // updateUserGameStateが正しい引数で呼び出されたか検証
+    expect(mockUpdateUserGameState).toHaveBeenCalledTimes(1);
+    expect(mockUpdateUserGameState).toHaveBeenCalledWith({
+      boardGameId: 'game1',
+      played: true,
+      evaluation: 5,
+      comment: '面白い'
+    });
   });
 });

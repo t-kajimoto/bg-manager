@@ -13,6 +13,13 @@ jest.mock('@/lib/firebase/config', () => ({
   auth: {},
 }));
 
+// Server Actionをモック化
+jest.mock('@/app/actions/boardgames', () => ({
+  getBoardGames: jest.fn(),
+}));
+
+const mockGetBoardGames = require('@/app/actions/boardgames').getBoardGames;
+
 // ==========================================================================================
 // テスト用のモック設定
 // ==========================================================================================
@@ -98,19 +105,25 @@ describe('useBoardgames', () => {
   // ------------------------------------------------------------------------------------------
   // テストケース1: データ取得成功時 (ログイン状態)
   // ------------------------------------------------------------------------------------------
-  it('ログインしている場合、Firestoreからデータを取得し、正しく結合すること', async () => {
-    // onSnapshotのモック実装
-    mockOnSnapshot
-      // 1回目の呼び出し (boardGames) では、ダミーのゲームデータを返す
-      .mockImplementationOnce((query, callback) => {
-        callback({ docs: mockGamesData.map(game => ({ id: game.id, data: () => game })) });
-        return jest.fn(); // unsubscribe関数を返す
-      })
-      // 2回目の呼び出し (userBoardGames) では、ダミーのユーザー評価データを返す
-      .mockImplementationOnce((query, callback) => {
-        callback({ docs: mockUserGamesData.map(ug => ({ data: () => ug })) });
-        return jest.fn(); // unsubscribe関数を返す
-      });
+  it('ログインしている場合、Server Actionからデータを取得し、ステートにセットすること', async () => {
+    // getBoardGamesのモック実装
+    // データ構造は IBoardGame[] (結合済みデータ) を返す前提
+    const mockCombinedData: IBoardGame[] = [
+      {
+        id: 'game1', name: 'Game A', min: 2, max: 4, time: 30, ownerName: 'Admin',
+        played: true, evaluation: 5, comment: '面白い！', averageEvaluation: 4,
+        isOwned: true,
+        tags: []
+      },
+      {
+        id: 'game2', name: 'Game B', min: 3, max: 5, time: 60, ownerName: 'Admin',
+        played: false, evaluation: 0, comment: '', averageEvaluation: 0,
+        isOwned: false,
+        tags: []
+      },
+    ];
+
+    mockGetBoardGames.mockResolvedValue({ data: mockCombinedData, error: null });
 
     // renderHookを使用してフックをレンダリング。ログイン状態のWrapperでラップする。
     const { result } = renderHook(() => useBoardgames(), { wrapper: createWrapper(mockUser) });
@@ -123,33 +136,25 @@ describe('useBoardgames', () => {
       expect(result.current.boardGames).toHaveLength(2);
     });
 
+    // Server Actionが呼ばれたか確認
+    expect(mockGetBoardGames).toHaveBeenCalled();
+
     // --- Game A のデータ検証 ---
     const gameA = result.current.boardGames.find(g => g.id === 'game1');
     expect(gameA?.name).toBe('Game A');
-    // ログインユーザー自身の評価が正しく反映されているか
-    expect(gameA?.played).toBe(true);
     expect(gameA?.evaluation).toBe(5);
-    expect(gameA?.comment).toBe('面白い！');
-    // 全ユーザーの平均評価が正しく計算されているか ( (5 + 3) / 2 = 4 )
-    expect(gameA?.averageEvaluation).toBe(4);
 
     // --- Game B のデータ検証 ---
     const gameB = result.current.boardGames.find(g => g.id === 'game2');
     expect(gameB?.name).toBe('Game B');
-    // ログインユーザーはGame Bを評価していないので、初期値になっているか
-    expect(gameB?.played).toBe(false);
-    expect(gameB?.evaluation).toBe(0);
-    expect(gameB?.comment).toBe('');
-    // Game Bは誰も評価していない (evaluationが0) ので、平均評価は0になるか
-    expect(gameB?.averageEvaluation).toBe(0);
   });
 
   // ------------------------------------------------------------------------------------------
   // テストケース2: 未ログイン時の挙動テスト
   // ------------------------------------------------------------------------------------------
   it('ログインしていない場合、データ取得は行われず、ボードゲームリストは空であること', async () => {
-    // onSnapshotは呼ばれないはずだが、念のため空実装をセット
-    mockOnSnapshot.mockImplementation(() => jest.fn());
+    // モックリセット
+    mockGetBoardGames.mockClear();
 
     // 未ログイン状態 (currentUser: null) のWrapperでフックをレンダリング
     const { result } = renderHook(() => useBoardgames(), { wrapper: createWrapper(null) });
@@ -160,31 +165,34 @@ describe('useBoardgames', () => {
       // データは取得されないため、配列は空であること
       expect(result.current.boardGames).toHaveLength(0);
     });
+    
+    // Server Actionは呼ばれないはず
+    expect(mockGetBoardGames).not.toHaveBeenCalled();
   });
 
   // ------------------------------------------------------------------------------------------
   // テストケース3: ローディング状態のテスト
   // ------------------------------------------------------------------------------------------
-  it('データ取得中はloadingがtrueであること', () => {
-    // onSnapshotがまだコールバックを呼ばないようにモックを空実装
-    mockOnSnapshot.mockImplementation(() => jest.fn());
+  it('データ取得中はloadingがtrueであること', async () => {
+    // 解決しないPromiseを返すことでローディング状態を維持
+    mockGetBoardGames.mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useBoardgames(), { wrapper: createWrapper(mockUser) });
 
     // 初回レンダリング直後はローディング状態であるはず
     expect(result.current.loading).toBe(true);
+    
+    // 念のため少し待ってもtrueのままであるか（省略可だがwaitが必要な場合もある）
+    // 今回は即時returnではないので renderHook 直後にtrueチェックでOK
   });
 
   // ------------------------------------------------------------------------------------------
   // テストケース4: エラー発生時のテスト
   // ------------------------------------------------------------------------------------------
   it('データ取得でエラーが発生した場合、errorステートにエラーオブジェクトがセットされること', async () => {
-    const mockError = new Error('Firestore Error');
-    // onSnapshotのモックを、エラーを発生させる実装に変更
-    mockOnSnapshot.mockImplementation((query, onNext, onError) => {
-      onError(mockError); // エラーコールバックを直接呼ぶ
-      return jest.fn();
-    });
+    const mockErrorMsg = 'Server Error';
+    // エラーを返すようにモック
+    mockGetBoardGames.mockResolvedValue({ data: [], error: mockErrorMsg });
 
     const { result } = renderHook(() => useBoardgames(), { wrapper: createWrapper(mockUser) });
 
@@ -192,7 +200,8 @@ describe('useBoardgames', () => {
       // ローディングが終了し、
       expect(result.current.loading).toBe(false);
       // errorステートにエラーがセットされていることを確認
-      expect(result.current.error).toBe(mockError);
+      expect(result.current.error).toBeInstanceOf(Error);
+      expect(result.current.error?.message).toBe(mockErrorMsg);
     });
   });
 });

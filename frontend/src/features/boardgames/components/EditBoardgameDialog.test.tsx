@@ -1,15 +1,18 @@
-
 import { render, screen } from '@testing-library/react';
 import { EditBoardgameDialog } from './EditBoardgameDialog';
 import { IBoardGame } from '@/features/boardgames/types';
 
-jest.mock('@/features/boardgames/hooks/useBoardgameManager', () => ({
-  useBoardgameManager: () => ({
-    updateBoardgame: jest.fn(),
-    loading: false,
-    error: null,
-  }),
+// モック
+jest.mock('@/app/actions/boardgames', () => ({
+  updateBoardGame: jest.fn(),
 }));
+
+jest.mock('@/app/actions/bgg', () => ({
+  searchBoardGame: jest.fn(),
+  getBoardGameDetails: jest.fn(),
+}));
+
+const mockUpdateBoardGame = require('@/app/actions/boardgames').updateBoardGame;
 
 const mockGame: IBoardGame = {
   id: '1', name: 'カタン', min: 3, max: 4, time: 60, evaluation: 0, played: false

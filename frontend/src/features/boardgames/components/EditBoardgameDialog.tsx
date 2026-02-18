@@ -132,6 +132,31 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
               )}
             />
             <Box sx={{ display: 'flex', gap: 2 }}>
+              <Controller name="min" control={control} rules={{ required: '必須', min: { value: 1, message: '1以上' } }}
+                render={({ field }) => (
+                  <TextField {...field} label="最小人数" type="number" fullWidth error={!!errors.min} helperText={errors.min?.message} disabled={loading} />
+                )}
+              />
+              <Controller name="max" control={control} rules={{ required: '必須', min: { value: 1, message: '1以上' } }}
+                render={({ field }) => (
+                  <TextField {...field} label="最大人数" type="number" fullWidth error={!!errors.max} helperText={errors.max?.message} disabled={loading} />
+                )}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Controller name="time" control={control} rules={{ required: '必須', min: { value: 0, message: '0以上' } }}
+                render={({ field }) => (
+                  <TextField {...field} label="プレイ時間 (分)" type="number" fullWidth error={!!errors.time} helperText={errors.time?.message} disabled={loading} />
+                )}
+              />
+               <Controller name="yearPublished" control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="発行年" type="number" fullWidth disabled={loading} />
+                )}
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <Controller name="minPlayTime" control={control}
                 render={({ field }) => (
                   <TextField {...field} label="最小プレイ時間" type="number" fullWidth disabled={loading} />
