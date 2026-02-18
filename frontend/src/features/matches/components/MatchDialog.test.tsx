@@ -1,12 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MatchDialog } from './MatchDialog';
-import { addMatch, updateMatch } from '@/app/actions/matches';
+import { addMatch, updateMatch } from '@/app/actions/boardgames';
 import { BaseDialog } from '@/components/ui/BaseDialog';
 
 // モック
-jest.mock('@/app/actions/matches', () => ({
+jest.mock('@/app/actions/boardgames', () => ({
   addMatch: jest.fn(),
   updateMatch: jest.fn(),
+}));
+
+jest.mock('@/app/actions/profiles', () => ({
+  getProfiles: jest.fn(() => Promise.resolve({ data: [], error: null })),
+  generateDiscriminator: jest.fn(() => Promise.resolve('1234')),
 }));
 
 // BaseDialogはすでにテスト済みなので、ここでは単純なdivとしてモックしても良いが、
@@ -24,8 +29,9 @@ describe('MatchDialog Integration', () => {
     open: true,
     onClose: mockOnClose,
     onSuccess: mockOnSuccess,
-    users: [], // 必要に応じてダミーデータを入れる
+    boardGames: [], // Add required prop
     initialData: null,
+    mode: 'add',
   };
 
   beforeEach(() => {
