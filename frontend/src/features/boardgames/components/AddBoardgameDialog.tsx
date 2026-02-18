@@ -29,6 +29,9 @@ type BoardGameFormInput = {
   categories: string;
   averageRating: number;
   complexity: number;
+  bggId?: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
 };
 
 export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDialogProps) => {
@@ -42,13 +45,14 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
   const [options, setOptions] = useState<BGGCandidate[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   
-  // Selected BGG Data
+  // Selected BGG Data (Still used for UI display like Avatar)
   const [selectedBGGDetails, setSelectedBGGDetails] = useState<BGGDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
   const {
     control,
     handleSubmit,
+    register,
     reset,
     setValue,
     formState: { errors },
@@ -71,6 +75,9 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
       categories: '',
       averageRating: 0,
       complexity: 0,
+      bggId: '',
+      imageUrl: '',
+      thumbnailUrl: '',
     },
   });
 
@@ -110,27 +117,27 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
 
     const gameData = {
         name: data.name,
-        min: Number(data.min),
-        max: Number(data.max),
-        time: Number(data.time),
+        min: Number(data.min) || 1,
+        max: Number(data.max) || 1,
+        time: Number(data.time) || 0,
         tags: data.tags,
         isOwned: data.isOwned,
-        minPlayTime: Number(data.minPlayTime),
-        maxPlayTime: Number(data.maxPlayTime),
-        yearPublished: Number(data.yearPublished),
+        minPlayTime: Number(data.minPlayTime) || 0,
+        maxPlayTime: Number(data.maxPlayTime) || 0,
+        yearPublished: Number(data.yearPublished) || new Date().getFullYear(),
         description: data.description,
         designers: data.designers.split(',').map(s => s.trim()).filter(Boolean),
         artists: data.artists.split(',').map(s => s.trim()).filter(Boolean),
         publishers: data.publishers.split(',').map(s => s.trim()).filter(Boolean),
         mechanics: data.mechanics.split(',').map(s => s.trim()).filter(Boolean),
         categories: data.categories.split(',').map(s => s.trim()).filter(Boolean),
-        averageRating: Number(data.averageRating),
-        complexity: Number(data.complexity),
-        // Add BGG details if available (redundant but good for tracking)
-        bggId: selectedBGGDetails?.id,
-        imageUrl: selectedBGGDetails?.image,
-        thumbnailUrl: selectedBGGDetails?.thumbnail,
+        averageRating: Number(data.averageRating) || 0,
+        complexity: Number(data.complexity) || 0,
+        bggId: data.bggId || selectedBGGDetails?.id,
+        imageUrl: data.imageUrl || selectedBGGDetails?.image,
+        thumbnailUrl: data.thumbnailUrl || selectedBGGDetails?.thumbnail,
     };
+    console.log('AddBoardgameDialog: Submitting gameData:', gameData);
 
     const result = await addBoardGame(gameData);
 
@@ -170,6 +177,9 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit(handleFormSubmit)}>
+          <input type="hidden" {...register('bggId')} />
+          <input type="hidden" {...register('imageUrl')} />
+          <input type="hidden" {...register('thumbnailUrl')} />
           {errorMessage && (
              <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>
           )}
@@ -205,7 +215,40 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
                         const val = typeof newValue === 'string' ? newValue : newValue?.name || '';
                         onChange(val);
                         setInputValue(val);
-                        // onGameSelected(newValue); // Removed
+                        
+                        if (newValue && typeof newValue !== 'string') {
+                            setDetailsLoading(true);
+                            getBoardGameDetails(newValue.id).then((details) => {
+                                setDetailsLoading(false);
+                                if (details) {
+                                    console.log('BGG Details fetched:', details);
+                                    setSelectedBGGDetails(details);
+                                    setValue('min', details.minPlayers || 1);
+                                    setValue('max', details.maxPlayers || 1);
+                                    setValue('time', details.playTime || 0);
+                                    setValue('minPlayTime', details.minPlayTime || 0);
+                                    setValue('maxPlayTime', details.maxPlayTime || 0);
+                                    setValue('yearPublished', details.year || new Date().getFullYear());
+                                    setValue('description', details.description || '');
+                                    setValue('designers', details.designers?.join(', ') || '');
+                                    setValue('artists', details.artists?.join(', ') || '');
+                                    setValue('publishers', details.publishers?.join(', ') || '');
+                                    setValue('mechanics', details.mechanics?.join(', ') || '');
+                                    setValue('categories', details.categories?.join(', ') || '');
+                                    setValue('averageRating', details.averageRating ? parseFloat(details.averageRating.toFixed(1)) : 0);
+                                    setValue('complexity', details.complexity ? parseFloat(details.complexity.toFixed(1)) : 0);
+                                    // Set hidden BGG fields
+                                    setValue('bggId', String(details.id));
+                                    setValue('imageUrl', details.image);
+                                    setValue('thumbnailUrl', details.thumbnail);
+                                }
+                            });
+                        } else {
+                            setSelectedBGGDetails(null);
+                            setValue('bggId', undefined);
+                            setValue('imageUrl', undefined);
+                            setValue('thumbnailUrl', undefined);
+                        }
                     }}
                     renderInput={(params) => (
                         <TextField

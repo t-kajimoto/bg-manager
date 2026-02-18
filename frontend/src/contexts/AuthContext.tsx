@@ -1,15 +1,22 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
-import { MOCK_USER } from '@/lib/mock/data';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+  ReactNode,
+} from "react";
+import { User, Session } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
+import { MOCK_USER } from "@/lib/mock/data";
 
 /**
  * @interface ICustomUser
  * @description Supabaseのprofilesテーブルに保存されている、アプリケーション独自のユーザー情報の型定義です。
  */
-export type Visibility = 'public' | 'friends' | 'private';
+export type Visibility = "public" | "friends" | "private";
 
 /**
  * @interface ICustomUser
@@ -66,16 +73,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [customUser, setCustomUser] = useState<ICustomUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+  }, [user, loading, session]);
+
   // Mock handling (if needed)
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
       setUser({
         id: MOCK_USER.uid,
         email: MOCK_USER.email,
         user_metadata: {
           full_name: MOCK_USER.displayName,
           avatar_url: MOCK_USER.photoURL,
-        }
+        },
       } as unknown as User);
       setCustomUser({
         nickname: MOCK_USER.nickname || "",
@@ -86,16 +96,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') return;
+    if (process.env.NEXT_PUBLIC_USE_MOCK === "true") return;
 
     let mounted = true;
 
     const fetchProfile = async (sessionUser: User) => {
       try {
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', sessionUser.id)
+          .from("profiles")
+          .select("*")
+          .eq("id", sessionUser.id)
           .single();
 
         if (mounted) {
@@ -104,15 +114,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const googleAvatarUrl = sessionUser.user_metadata?.avatar_url;
             if (!profile.avatar_url && googleAvatarUrl) {
               await supabase
-                .from('profiles')
+                .from("profiles")
                 .update({ avatar_url: googleAvatarUrl })
-                .eq('id', sessionUser.id);
+                .eq("id", sessionUser.id);
             }
 
             setCustomUser({
-              nickname: profile.username || sessionUser.user_metadata?.full_name || 'No Name',
-              isAdmin: profile.username === 'admin',
-              displayName: profile.display_name || sessionUser.user_metadata?.full_name,
+              nickname:
+                profile.username ||
+                sessionUser.user_metadata?.full_name ||
+                "No Name",
+              isAdmin: profile.username === "admin",
+              displayName:
+                profile.display_name || sessionUser.user_metadata?.full_name,
               email: sessionUser.email,
               photoURL: profile.avatar_url || googleAvatarUrl,
               discriminator: profile.discriminator,
@@ -124,20 +138,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           } else {
             setCustomUser({
-              nickname: sessionUser.user_metadata?.full_name || 'No Name',
+              nickname: sessionUser.user_metadata?.full_name || "No Name",
               isAdmin: false,
               displayName: sessionUser.user_metadata?.full_name,
               email: sessionUser.email,
               photoURL: sessionUser.user_metadata?.avatar_url,
-              visibilityGames: 'public',
-              visibilityMatches: 'public',
-              visibilityFriends: 'public',
-              visibilityUserList: 'public',
+              visibilityGames: "public",
+              visibilityMatches: "public",
+              visibilityFriends: "public",
+              visibilityUserList: "public",
             });
           }
         }
       } catch (err) {
-        console.error('Error fetching profile:', err);
+        console.error("Error fetching profile:", err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -145,7 +159,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
         if (error) throw error;
 
         if (mounted) {
@@ -158,7 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } catch (err) {
-        console.error('Error initializing auth:', err);
+        console.error("Error initializing auth:", err);
         if (mounted) setLoading(false);
       }
     };
@@ -170,7 +187,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!mounted) return;
 
       // Only re-fetch if state actually changed or it's a critical event
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+      if (
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "USER_UPDATED"
+      ) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -178,7 +199,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setLoading(false);
         }
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === "SIGNED_OUT") {
         setSession(null);
         setUser(null);
         setCustomUser(null);
@@ -195,38 +216,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [supabase]);
 
   const updateNickname = async (nickname: string) => {
-    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
-      setCustomUser(prev => prev ? { ...prev, nickname } : null);
+    if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
+      setCustomUser((prev) => (prev ? { ...prev, nickname } : null));
       return;
     }
     if (!user) return;
 
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ username: nickname })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (!error) {
-        setCustomUser(prev => prev ? { ...prev, nickname } : null);
+        setCustomUser((prev) => (prev ? { ...prev, nickname } : null));
       } else {
         console.error("Error updating nickname:", error);
       }
     } catch (error) {
-       console.error("Error updating nickname:", error);
+      console.error("Error updating nickname:", error);
     }
   };
 
   const updateProfile = async (data: Partial<ICustomUser>) => {
-    if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
-      setCustomUser(prev => prev ? { ...prev, ...data } : null);
+    if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
+      setCustomUser((prev) => (prev ? { ...prev, ...data } : null));
       return;
     }
     if (!user) return;
 
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({
           display_name: data.displayName,
           discriminator: data.discriminator,
@@ -238,15 +259,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           visibility_friends: data.visibilityFriends,
           visibility_user_list: data.visibilityUserList,
         })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (!error) {
-        setCustomUser(prev => prev ? { ...prev, ...data } : null);
+        setCustomUser((prev) => (prev ? { ...prev, ...data } : null));
       } else {
         console.error("Error updating profile:", error);
       }
     } catch (error) {
-       console.error("Error updating profile:", error);
+      console.error("Error updating profile:", error);
     }
   };
 
@@ -255,8 +276,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = useMemo(
-    () => ({ user, session, customUser, loading, updateNickname, updateProfile, signOut }),
-    [user, session, customUser, loading]
+    () => ({
+      user,
+      session,
+      customUser,
+      loading,
+      updateNickname,
+      updateProfile,
+      signOut,
+    }),
+    [user, session, customUser, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
