@@ -122,6 +122,7 @@ export async function addBoardGame(game: {
   averageRating?: number;
   complexity?: number;
 }) {
+  console.log('ServerAction: addBoardGame called with:', game);
   const supabase = await createClient();
   const {
     data: { user },
@@ -154,7 +155,6 @@ export async function addBoardGame(game: {
         categories: game.categories,
         average_rating: game.averageRating,
         complexity: game.complexity,
-        created_by: user.id,
       })
       .select()
       .single();
@@ -174,7 +174,16 @@ export async function addBoardGame(game: {
     return { error: null };
   } catch (error) {
     console.error('Error adding board game:', error);
-    return { error: 'Failed to add board game' };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((error as any).message)
+      console.error('Error message:', (error as any).message);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((error as any).details)
+      console.error('Error details:', (error as any).details);
+
+    return {
+      error: `Failed to add board game: ${(error as any).message || String(error)}`,
+    };
   }
 }
 

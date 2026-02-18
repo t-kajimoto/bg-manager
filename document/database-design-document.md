@@ -135,30 +135,30 @@ erDiagram
 ボードゲームのマスターデータを格納します。
 ※ `tags` カラムは、アプリ独自のタグ付けとして使用します。BGG由来の `mechanics` や `categories` とは区別して管理することを推奨しますが、運用上 `tags` に統合することも可能です。今回は明確化のため別途カラム定義しています。
 
-| 論理名 (物理名)                    | データ型    | 必須 | 説明                             | 備考                   |
-| :--------------------------------- | :---------- | :--- | :------------------------------- | :--------------------- |
-| ゲームID (id)                      | `uuid`      | ✔    | ボードゲームを一意に識別するID   | 自動生成               |
-| ゲーム名 (name)                    | `text`      | ✔    | ゲームの名称                     |                        |
-| 最小プレイ人数 (min_players)       | `int`       | ✔    | プレイ可能な最小人数             |                        |
-| 最大プレイ人数 (max_players)       | `int`       | ✔    | プレイ可能な最大人数             |                        |
-| 標準プレイ時間 (play_time_minutes) | `int`       | ✔    | プレイにかかる標準的な時間（分） |                        |
-| タグ (tags)                        | `text[]`    |      | アプリ独自のタグ                 |                        |
-| 作成者ID (created_by)              | `uuid`      | ✔    | データを登録したユーザーのID     | `auth.users.id` を参照 |
-| 作成日時 (created_at)              | `timestamp` |      | レコード作成日時                 |                        |
-| BGG ID (bgg_id)                    | `text`      |      | BoardGameGeek上のID              | ユニーク               |
-| 画像URL (image_url)                | `text`      |      | ゲームのメイン画像URL            | BGGより取得            |
-| サムネイルURL (thumbnail_url)      | `text`      |      | ゲームのサムネイル画像URL        | BGGより取得            |
-| 説明 (description)                 | `text`      |      | ゲームの説明文                   | BGGより取得            |
-| 最小プレイ時間 (min_playtime)      | `int`       |      | BGGデータ上の最小プレイ時間      | BGGより取得            |
-| 最大プレイ時間 (max_playtime)      | `int`       |      | BGGデータ上の最大プレイ時間      | BGGより取得            |
-| 発行年 (year_published)            | `int`       |      | ゲームの発行年                   | BGGより取得            |
-| デザイナー (designers)             | `text[]`    |      | デザイナー名リスト               | BGGより取得            |
-| アーティスト (artists)             | `text[]`    |      | アーティスト名リスト             | BGGより取得            |
-| パブリッシャー (publishers)        | `text[]`    |      | パブリッシャー名リスト           | BGGより取得            |
-| メカニクス (mechanics)             | `text[]`    |      | ゲームメカニクス                 | BGGより取得            |
-| カテゴリ (categories)              | `text[]`    |      | ゲームカテゴリ                   | BGGより取得            |
-| BGG平均評価 (average_rating)       | `double`    |      | BGG上の平均評価                  | BGGより取得            |
-| BGG重ゲー度 (complexity)           | `double`    |      | BGG上のComplexity (Weight)       | BGGより取得            |
+| 論理名 (物理名)                    | データ型    | 必須 | 説明                             | 備考                |
+| :--------------------------------- | :---------- | :--- | :------------------------------- | :------------------ |
+| ゲームID (id)                      | `uuid`      | ✔    | ボードゲームを一意に識別するID   | 自動生成            |
+| ゲーム名 (name)                    | `text`      | ✔    | ゲームの名称                     |                     |
+| 最小プレイ人数 (min_players)       | `int`       | ✔    | プレイ可能な最小人数             |                     |
+| 最大プレイ人数 (max_players)       | `int`       | ✔    | プレイ可能な最大人数             |                     |
+| 標準プレイ時間 (play_time_minutes) | `int`       | ✔    | プレイにかかる標準的な時間（分） |                     |
+| タグ (tags)                        | `text[]`    |      | アプリ独自のタグ                 |                     |
+| 所有者名 (owner_name)              | `text`      |      | 所有者の名前 (非推奨/レガシー)   | `created_by` の代替 |
+| 作成日時 (created_at)              | `timestamp` |      | レコード作成日時                 |                     |
+| BGG ID (bgg_id)                    | `text`      |      | BoardGameGeek上のID              | ユニーク            |
+| 画像URL (image_url)                | `text`      |      | ゲームのメイン画像URL            | BGGより取得         |
+| サムネイルURL (thumbnail_url)      | `text`      |      | ゲームのサムネイル画像URL        | BGGより取得         |
+| 説明 (description)                 | `text`      |      | ゲームの説明文                   | BGGより取得         |
+| 最小プレイ時間 (min_playtime)      | `int`       |      | BGGデータ上の最小プレイ時間      | BGGより取得         |
+| 最大プレイ時間 (max_playtime)      | `int`       |      | BGGデータ上の最大プレイ時間      | BGGより取得         |
+| 発行年 (year_published)            | `int`       |      | ゲームの発行年                   | BGGより取得         |
+| デザイナー (designers)             | `text[]`    |      | デザイナー名リスト               | BGGより取得         |
+| アーティスト (artists)             | `text[]`    |      | アーティスト名リスト             | BGGより取得         |
+| パブリッシャー (publishers)        | `text[]`    |      | パブリッシャー名リスト           | BGGより取得         |
+| メカニクス (mechanics)             | `text[]`    |      | ゲームメカニクス                 | BGGより取得         |
+| カテゴリ (categories)              | `text[]`    |      | ゲームカテゴリ                   | BGGより取得         |
+| BGG平均評価 (average_rating)       | `double`    |      | BGG上の平均評価                  | BGGより取得         |
+| BGG重ゲー度 (complexity)           | `double`    |      | BGG上のComplexity (Weight)       | BGGより取得         |
 
 ### 4.3. ユーザー別ゲーム状態 (user_board_game_states)
 
