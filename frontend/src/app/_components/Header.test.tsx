@@ -8,7 +8,10 @@ const mockUser: User = {
   uid: '12345',
   displayName: 'Test User',
   email: 'test@example.com',
-} as User;
+  user_metadata: {
+    full_name: 'Test Full Name',
+  },
+} as unknown as User;
 
 const mockUpdateNickname = jest.fn();
 
@@ -47,7 +50,7 @@ describe('Header Component', () => {
     fireEvent.click(userButton);
 
     // Check for menu items
-    expect(screen.getByText(/ニックネームを編集/i)).toBeInTheDocument();
+    expect(screen.getByText(/マイページ/i)).toBeInTheDocument();
     expect(screen.getByText(/ログアウト/i)).toBeInTheDocument();
   });
 
@@ -58,6 +61,6 @@ describe('Header Component', () => {
       </AuthContext.Provider>
     );
 
-    expect(screen.getByRole('button', { name: /Test User/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Test Full Name/i })).toBeInTheDocument();
   });
 });
