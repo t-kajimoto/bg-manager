@@ -59,7 +59,8 @@
   --nav-rail-width: 80px;
 }
 
-/* --- ダークモード --- */
+/* --- ダークモード（一時的に無効化） --- */
+/*
 @media (prefers-color-scheme: dark) {
   :root {
     --md-sys-color-primary: #ffb4a1;
@@ -101,6 +102,7 @@
     --foreground: var(--md-sys-color-on-surface);
   }
 }
+*/
 
 /* --- 基本リセット --- */
 html,
