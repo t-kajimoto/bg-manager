@@ -14,8 +14,9 @@ export const SetUsernameDialog = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // ログイン済みかつ、displayName または discriminator が未設定の場合に表示
-    if (!authLoading && user && (!customUser?.displayName || !customUser?.discriminator)) {
+    // ログイン済みかつ、プロフィール初期設定が完了していない場合に表示
+    // isProfileSetupはAuthContextでdiscriminatorの有無から判定している
+    if (!authLoading && user && customUser && !customUser.isProfileSetup) {
       setOpen(true);
       if (customUser?.nickname && !displayName) {
         setDisplayName(customUser.nickname);

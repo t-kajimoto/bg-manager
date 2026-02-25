@@ -57,7 +57,10 @@ export const UserListTab = () => {
           {profiles.map((profile, index) => (
             <Box key={profile.id}>
               <ListItem disablePadding>
-                <Link href={`/profile/${profile.id}`} passHref style={{ width: '100%', textDecoration: 'none', color: 'inherit' }}>
+                <Link 
+                  href={`/profile/${profile.id}`} 
+                  style={{ width: '100%', textDecoration: 'none', color: 'inherit' }}
+                >
                   <ListItemButton sx={{ py: 1.5 }}>
                     <ListItemAvatar>
                       <Avatar src={profile.avatar_url || undefined}>

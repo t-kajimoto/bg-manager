@@ -25,6 +25,8 @@ export type Visibility = "public" | "friends" | "private";
 interface ICustomUser {
   nickname: string;
   isAdmin: boolean;
+  /** profilesテーブルにdiscriminatorが設定済みかどうかのフラグ */
+  isProfileSetup: boolean;
   displayName?: string;
   email?: string;
   photoURL?: string;
@@ -90,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCustomUser({
         nickname: MOCK_USER.nickname || "",
         isAdmin: MOCK_USER.isAdmin || false,
+        isProfileSetup: true,
       });
       setLoading(false);
     }
@@ -125,6 +128,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 sessionUser.user_metadata?.full_name ||
                 "No Name",
               isAdmin: profile.username === "admin",
+              // discriminatorが存在すれば初期設定完了とみなす
+              isProfileSetup: !!profile.discriminator,
               displayName:
                 profile.display_name || sessionUser.user_metadata?.full_name,
               email: sessionUser.email,
@@ -140,6 +145,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setCustomUser({
               nickname: sessionUser.user_metadata?.full_name || "No Name",
               isAdmin: false,
+              // profilesテーブルにレコードがない = 初期設定未完了
+              isProfileSetup: false,
               displayName: sessionUser.user_metadata?.full_name,
               email: sessionUser.email,
               photoURL: sessionUser.user_metadata?.avatar_url,
@@ -152,8 +159,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (err) {
         console.error("Error fetching profile:", err);
-      } finally {
-        if (mounted) setLoading(false);
       }
     };
 
@@ -169,12 +174,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(session);
           setUser(session?.user ?? null);
           if (session?.user) {
+            setLoading(false); // プロフィール取得を待たずにUIを表示
             await fetchProfile(session.user);
           } else {
             setLoading(false);
           }
         }
       } catch (err) {
+        // Ignore AbortError which can happen on navigation
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.log('Auth initialization aborted');
+          if (mounted) setLoading(false);
+          return;
+        }
         console.error("Error initializing auth:", err);
         if (mounted) setLoading(false);
       }
@@ -190,11 +202,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (
         event === "SIGNED_IN" ||
         event === "TOKEN_REFRESHED" ||
-        event === "USER_UPDATED"
+        event === "USER_UPDATED" ||
+        event === "INITIAL_SESSION"
       ) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          setLoading(false); // プロフィール取得を待たずにUIを表示
           await fetchProfile(session.user);
         } else {
           setLoading(false);
@@ -222,19 +236,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     if (!user) return;
 
+    // Optimistic Update
+    const previousUser = customUser;
+    setCustomUser((prev) => (prev ? { ...prev, nickname } : null));
+
     try {
       const { error } = await supabase
         .from("profiles")
         .update({ username: nickname })
         .eq("id", user.id);
 
-      if (!error) {
-        setCustomUser((prev) => (prev ? { ...prev, nickname } : null));
-      } else {
+      if (error) {
         console.error("Error updating nickname:", error);
+        // Revert on error
+        setCustomUser(previousUser);
+        throw error; // Component側でエラーハンドリングできるように再スロー
       }
     } catch (error) {
       console.error("Error updating nickname:", error);
+      setCustomUser(previousUser);
+      throw error;
     }
   };
 
@@ -244,6 +265,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     if (!user) return;
+
+    // Optimistic Update
+    const previousUser = customUser;
+    setCustomUser((prev) => (prev ? { ...prev, ...data } : null));
 
     try {
       const { error } = await supabase
@@ -261,13 +286,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })
         .eq("id", user.id);
 
-      if (!error) {
-        setCustomUser((prev) => (prev ? { ...prev, ...data } : null));
-      } else {
+      if (error) {
         console.error("Error updating profile:", error);
+        // Revert on error
+        setCustomUser(previousUser);
+        throw error;
       }
     } catch (error) {
       console.error("Error updating profile:", error);
+      setCustomUser(previousUser);
+      throw error;
     }
   };
 

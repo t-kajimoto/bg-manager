@@ -1,9 +1,10 @@
-'use client';
-
 import { useState } from 'react';
-import { Box, Typography, TextField, Button, Avatar, Paper, Alert, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import { 
+  Box, Typography, TextField, Button, Avatar, Paper, Alert, CircularProgress, 
+  IconButton, Tooltip, FormControl, InputLabel, Select, MenuItem, Divider 
+} from '@mui/material';
 import { PhotoCamera as PhotoCameraIcon } from '@mui/icons-material';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, Visibility } from '@/contexts/AuthContext';
 import { uploadAvatar } from '@/app/actions/profiles';
 
 export const ProfileTab = () => {
@@ -11,6 +12,14 @@ export const ProfileTab = () => {
   const [displayName, setDisplayName] = useState(customUser?.displayName || '');
   const [discriminator, setDiscriminator] = useState(customUser?.discriminator || '');
   const [bio, setBio] = useState(customUser?.bio || '');
+  
+  // 公開設定ステート
+  const [visibilityGames, setVisibilityGames] = useState<Visibility>(customUser?.visibilityGames || 'public');
+  const [visibilityMatches, setVisibilityMatches] = useState<Visibility>(customUser?.visibilityMatches || 'public');
+  const [visibilityFriends, setVisibilityFriends] = useState<Visibility>(customUser?.visibilityFriends || 'public');
+  // ユーザーリストへの表示設定（デフォルトpublic）
+  const [visibilityUserList, setVisibilityUserList] = useState<Visibility>(customUser?.visibilityUserList || 'public');
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +37,10 @@ export const ProfileTab = () => {
         displayName,
         discriminator,
         bio,
+        visibilityGames,
+        visibilityMatches,
+        visibilityFriends,
+        visibilityUserList,
       });
       setSuccess(true);
     } catch (err) {
@@ -58,10 +71,17 @@ export const ProfileTab = () => {
     }
   };
 
+  const VISIBILITY_OPTIONS = [
+    { value: 'public', label: '全体に公開' },
+    { value: 'friends', label: 'フレンドのみ' },
+    { value: 'private', label: '非公開' },
+  ];
+
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 2 }}>
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4 }}>
+          {/* Avatar Section (Unchanged) */}
           <Box sx={{ position: 'relative' }}>
             <Avatar 
               src={customUser?.photoURL} 
@@ -143,10 +163,59 @@ export const ProfileTab = () => {
             onChange={(e) => setBio(e.target.value)}
             disabled={loading}
           />
+
+          <Divider sx={{ my: 1 }} />
+          <Typography variant="h6">公開設定</Typography>
+          
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>所持ボードゲーム</InputLabel>
+              <Select
+                value={visibilityGames}
+                label="所持ボードゲーム"
+                onChange={(e) => setVisibilityGames(e.target.value as Visibility)}
+                disabled={loading}
+              >
+                {VISIBILITY_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth size="small">
+              <InputLabel>戦績</InputLabel>
+              <Select
+                value={visibilityMatches}
+                label="戦績"
+                onChange={(e) => setVisibilityMatches(e.target.value as Visibility)}
+                disabled={loading}
+              >
+                {VISIBILITY_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth size="small">
+              <InputLabel>ユーザー一覧への表示</InputLabel>
+              <Select
+                value={visibilityUserList}
+                label="ユーザー一覧への表示"
+                onChange={(e) => setVisibilityUserList(e.target.value as Visibility)}
+                disabled={loading}
+              >
+                {VISIBILITY_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
           <Button 
             variant="contained" 
             onClick={handleSave} 
             disabled={loading}
+            sx={{ mt: 2 }}
           >
             {loading ? <CircularProgress size={24} /> : '変更を保存'}
           </Button>
