@@ -42,11 +42,14 @@ export const useBoardgames = (userId?: string): UseBoardgamesReturn => {
     // 特定のユーザーIDが指定されている場合は、ログイン状態に関わらず取得を試みる
     if (authLoading && !userId) return;
 
-    if (!user && !userId) {
-      setBoardGames([]);
-      setLoading(false);
-      return;
-    }
+    if (authLoading && !userId) return;
+
+    // 未ログイン時でも全体の一覧は取得できるように、ユーザー有無によるブロックを解除
+    // if (!user && !userId) {
+    //   setBoardGames([]);
+    //   setLoading(false);
+    //   return;
+    // }
 
     setLoading(true);
     setError(null);

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Box, Typography, Fab, Snackbar, IconButton, Grid,
-  Skeleton, Alert, TextField, InputAdornment, Chip, Paper
+  Skeleton, Alert, TextField, InputAdornment, Chip, Paper, Pagination
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -51,6 +51,10 @@ export default function Home() {
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [onlyOwned, setOnlyOwned] = useState(false);
 
+  // --- ページネーション状態 ---
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 24;
+
   // --- Snackbar ---
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -84,6 +88,11 @@ export default function Home() {
 
 
 
+  // --- 検索やフィルター条件変更時にページをリセット ---
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, filterTags, onlyOwned, sortBy]);
+
   // --- ゲームのフィルタリングとソート ---
   const filteredAndSortedGames = boardGames
     // 検索クエリによるフィルタリング
@@ -101,6 +110,13 @@ export default function Home() {
       if (sortBy === 'evaluation') return (b.evaluation || 0) - (a.evaluation || 0);
       return 0;
     });
+
+  // --- ページネーション設定 ---
+  const totalPages = Math.ceil(filteredAndSortedGames.length / ITEMS_PER_PAGE);
+  const currentGames = filteredAndSortedGames.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
 
   // --- ソートオプション定義 ---
   const sortOptions = [
@@ -280,9 +296,10 @@ export default function Home() {
         </Box>
       ) : (
         // ゲームカードグリッド
-        <Grid container spacing={2}>
-          {filteredAndSortedGames.map((game, index) => (
-            <Grid
+        <Box>
+          <Grid container spacing={2}>
+            {currentGames.map((game, index) => (
+              <Grid
               key={game.id}
               size={{ xs: 12, sm: 6, md: 4 }}
               sx={{
@@ -301,7 +318,23 @@ export default function Home() {
               />
             </Grid>
           ))}
-        </Grid>
+          </Grid>
+          
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_, value) => {
+                  setPage(value);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                color="primary"
+                size="large"
+              />
+            </Box>
+          )}
+        </Box>
       )}
 
       {/* --- FAB: ゲーム追加ボタン（ログイン時のみ表示） --- */}
