@@ -68,7 +68,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   if (!profile) {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-        <Header />
         <Container sx={{ mt: 4 }}>
           <Alert severity="error">ユーザーが見つかりませんでした。</Alert>
           <Box sx={{ mt: 2 }}>
@@ -127,7 +126,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Header />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton onClick={() => router.back()} sx={{ bgcolor: 'background.paper', boxShadow: 1 }}>

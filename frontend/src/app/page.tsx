@@ -1,217 +1,387 @@
 'use client';
 
-import { useState } from 'react';
-import { Box, Container, Typography, Button, Snackbar, IconButton, Tabs, Tab } from "@mui/material";
-import Header from "./_components/Header";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState, useMemo } from 'react';
+import {
+  Box, Typography, Fab, Snackbar, IconButton, Grid,
+  Skeleton, Alert, TextField, InputAdornment, Chip, Paper
+} from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
-import CasinoIcon from '@mui/icons-material/Casino';
-import EditIcon from '@mui/icons-material/Edit';
+import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
+import SortIcon from '@mui/icons-material/Sort';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import { useAuth } from "@/contexts/AuthContext";
 import { AddBoardgameDialog } from "@/features/boardgames/components/AddBoardgameDialog";
 import { EditBoardgameDialog } from "@/features/boardgames/components/EditBoardgameDialog";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EditUserEvaluationDialog } from "@/features/boardgames/components/EditUserEvaluationDialog";
-import { BodogeGachaDialog } from "@/features/gacha/components/BodogeGachaDialog";
+import { BoardGameCard } from "@/features/boardgames/components/BoardGameCard";
+import { useBoardgames } from "@/features/boardgames/hooks/useBoardgames";
+import { IBoardGame } from "@/features/boardgames/types";
+import { BodogeGachaDialog, GachaCondition } from "@/features/gacha/components/BodogeGachaDialog";
 import { GachaResultDialog } from "@/features/gacha/components/GachaResultDialog";
-import { BoardGameList } from "@/features/boardgames/components/BoardGameList";
-import { BoardGameFilter } from "@/features/boardgames/components/BoardGameFilter";
-import { useBoardGamePage } from "@/features/boardgames/hooks/useBoardGamePage";
-import { MatchList } from "@/features/matches/components/MatchList";
-import { MatchDialog } from "@/features/matches/components/MatchDialog";
-import { IMatch } from "@/features/matches/types";
-import { UserListTab } from "@/features/auth/components/UserListTab";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { GameDetailDialog } from "@/features/boardgames/components/GameDetailDialog";
+import { deleteBoardGame } from '@/app/actions/boardgames';
+
+// =============================================================================
+// ボードゲーム一覧ページ（メインページ）
+// M3準拠のレイアウト: 検索バー + Filter Chips + グリッドカード + FAB
+// ナビゲーションはAppLayout側で提供されるため、ここでは一覧表示に集中
+// =============================================================================
 
 export default function Home() {
+  const { boardGames, loading, error, refetch } = useBoardgames();
   const { customUser } = useAuth();
-  const {
-    boardGames,
-    loading,
-    error,
-    isDeleting,
-    filteredBoardGames,
-    allTags,
-    dialogState,
-    selectionState,
-    filterState,
-    snackbarState,
-    handlers
-  } = useBoardGamePage();
 
-  const [tabIndex, setTabIndex] = useState(0);
-  const [openMatchDialog, setOpenMatchDialog] = useState(false);
-  const [matchDialogMode, setMatchDialogMode] = useState<'add' | 'edit'>('add');
-  const [selectedMatch, setSelectedMatch] = useState<IMatch | undefined>(undefined);
-  const [matchListKey, setMatchListKey] = useState(0);
+  // --- ダイアログの開閉状態 ---
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [evaluationDialogOpen, setEvaluationDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue);
+  // --- 選択中のゲーム ---
+  const [selectedGame, setSelectedGame] = useState<IBoardGame | null>(null);
+  /** 詳細ダイアログ用の選択ゲーム（編集/削除と独立して管理） */
+  const [detailGame, setDetailGame] = useState<IBoardGame | null>(null);
+
+  // --- フィルター・検索・ソート状態 ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [onlyOwned, setOnlyOwned] = useState(false);
+
+  // --- Snackbar ---
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  /** Snackbarを表示するヘルパー */
+  const showSnackbar = (message: string) => {
+    setSnackbarMessage(message);
+    setSnackbarOpen(true);
   };
 
-  const handleMatchSuccess = () => {
-      setMatchListKey(prev => prev + 1);
-      handlers.refreshData(); // Also refresh board games generally
+  /** ゲーム削除処理 */
+  const handleDelete = async () => {
+    if (selectedGame) {
+      await deleteBoardGame(selectedGame.id);
+      setDeleteDialogOpen(false);
+      setSelectedGame(null);
+      showSnackbar('ボードゲームを削除しました');
+      // 削除後にリストを即座に更新
+      refetch();
+    }
   };
 
-  const handleAddMatch = () => {
-    setMatchDialogMode('add');
-    setSelectedMatch(undefined);
-    setOpenMatchDialog(true);
+  /** タグクリック: フィルタータグの追加/除去 */
+  const handleTagClick = (tag: string) => {
+    setFilterTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
   };
 
-  const handleEditMatch = (match: IMatch) => {
-    setMatchDialogMode('edit');
-    setSelectedMatch(match);
-    setOpenMatchDialog(true);
-  };
+
+
+
+
+  // --- ゲームのフィルタリングとソート ---
+  const filteredAndSortedGames = boardGames
+    // 検索クエリによるフィルタリング
+    .filter((game) => game.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    // タグフィルタリング
+    .filter((game) =>
+      filterTags.length === 0 || filterTags.some((tag) => game.tags?.includes(tag))
+    )
+    // 所持フィルタ
+    .filter((game) => !onlyOwned || game.isOwned)
+    // ソート
+    .sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'time') return (a.time || 0) - (b.time || 0);
+      if (sortBy === 'evaluation') return (b.evaluation || 0) - (a.evaluation || 0);
+      return 0;
+    });
+
+  // --- ソートオプション定義 ---
+  const sortOptions = [
+    { value: 'name', label: '名前順' },
+    { value: 'time', label: '時間順' },
+    { value: 'evaluation', label: '評価順' },
+  ];
 
   return (
-    <Box>
-      <Header />
-      <Container component="main" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', sm: 'center' },
-          mb: 2,
-          gap: 2
-        }}>
-          <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' }, textAlign: { xs: 'center', sm: 'left' } }}>
-            マイ・ボードゲーム
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: { xs: 'center', sm: 'flex-end' } }}>
-             <Button
+    <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
+      {/* --- ページヘッダー --- */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="h5"
+          component="h1"
+          sx={{
+            fontWeight: 700,
+            mb: 0.5,
+            color: 'var(--md-sys-color-on-surface)',
+          }}
+        >
+          ボードゲーム一覧
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ color: 'var(--md-sys-color-on-surface-variant)' }}
+        >
+          {boardGames.length > 0
+            ? `${boardGames.length}件のゲームが登録されています`
+            : 'ゲームを追加して管理を始めましょう'}
+        </Typography>
+      </Box>
+
+      {/* --- 検索・フィルターエリア --- */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          mb: 3,
+          borderRadius: 3,
+          backgroundColor: 'var(--md-sys-color-surface-container-low)',
+          border: '1px solid var(--md-sys-color-outline-variant)',
+        }}
+      >
+        {/* 検索バー */}
+        <TextField
+          fullWidth
+          placeholder="ゲームを検索..."
+          label="検索"
+          variant="outlined"
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'var(--md-sys-color-on-surface-variant)' }} />
+              </InputAdornment>
+            ),
+            endAdornment: searchQuery && (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setSearchQuery('')}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{ mb: 1.5 }}
+        />
+
+        {/* ソート + フィルターチップ */}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+          <SortIcon sx={{ fontSize: 18, color: 'var(--md-sys-color-on-surface-variant)' }} />
+          {sortOptions.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              size="small"
+              variant={sortBy === option.value ? 'filled' : 'outlined'}
+              color={sortBy === option.value ? 'primary' : 'default'}
+              onClick={() => setSortBy(option.value)}
+              sx={{
+                fontWeight: sortBy === option.value ? 600 : 400,
+                transition: 'all 200ms cubic-bezier(0.2, 0, 0, 1)',
+              }}
+            />
+          ))}
+
+          <Box sx={{ mx: 0.5, height: 20, borderLeft: '1px solid var(--md-sys-color-outline-variant)' }} />
+
+          <Chip
+            label="所持のみ"
+            size="small"
+            variant={onlyOwned ? 'filled' : 'outlined'}
+            color={onlyOwned ? 'secondary' : 'default'}
+            onClick={() => setOnlyOwned(!onlyOwned)}
+            icon={<FilterListIcon />}
+          />
+        </Box>
+
+        {/* 選択中のタグフィルター */}
+        {filterTags.length > 0 && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1.5, alignItems: 'center' }}>
+            <Typography variant="caption" sx={{ color: 'var(--md-sys-color-on-surface-variant)', mr: 0.5 }}>
+              タグ:
+            </Typography>
+            {filterTags.map((tag) => (
+              <Chip
+                key={tag}
+                label={tag}
+                size="small"
+                color="primary"
+                variant="outlined"
+                onDelete={() => handleTagClick(tag)}
+              />
+            ))}
+            <Chip
+              label="クリア"
+              size="small"
               variant="outlined"
-              startIcon={<CasinoIcon />}
-              onClick={() => dialogState.setOpenGachaDialog(true)}
-              fullWidth={true}
-              sx={{ flex: { xs: 1, sm: 'none' } }}
-            >
-              ガチャ
-            </Button>
-            {customUser && (
-              <>
-                <Button
-                    variant="outlined"
-                    startIcon={<EditIcon />}
-                    onClick={handleAddMatch}
-                    fullWidth={true}
-                    sx={{ flex: { xs: 1, sm: 'none' } }}
-                >
-                    戦績記録
-                </Button>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => dialogState.setOpenAddDialog(true)}
-                    fullWidth={true}
-                    sx={{ flex: { xs: 1, sm: 'none' } }}
-                >
-                    追加
-                </Button>
-              </>
-            )}
+              onClick={() => setFilterTags([])}
+              sx={{ ml: 0.5, color: 'var(--md-sys-color-error)' }}
+            />
           </Box>
+        )}
+      </Paper>
+
+      {/* --- ゲーム一覧コンテンツ --- */}
+      {loading ? (
+        // ローディング: M3風スケルトンカード
+        <Grid container spacing={2} data-testid="board-game-skeleton">
+          {[...Array(6)].map((_, i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Skeleton
+                variant="rounded"
+                height={260}
+                sx={{ borderRadius: 3, bgcolor: 'var(--md-sys-color-surface-container)' }}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      ) : error ? (
+        // エラー表示
+        <Alert
+          severity="error"
+          variant="outlined"
+          sx={{ borderRadius: 3 }}
+        >
+          <Typography variant="subtitle2">データの読み込み中にエラーが発生しました</Typography>
+          <Typography variant="body2">{error.message}</Typography>
+        </Alert>
+      ) : filteredAndSortedGames.length === 0 ? (
+        // 空状態
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 8,
+            px: 4,
+            borderRadius: 4,
+            backgroundColor: 'var(--md-sys-color-surface-container-low)',
+            border: '1px dashed var(--md-sys-color-outline-variant)',
+          }}
+        >
+          <Typography variant="h1" sx={{ fontSize: '3rem', mb: 2 }}>
+            🦔
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'var(--md-sys-color-on-surface)' }}>
+            {searchQuery || filterTags.length > 0
+              ? '検索結果が見つかりません'
+              : '登録されているボードゲームはありません。'}
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+            {searchQuery || filterTags.length > 0
+              ? '別のキーワードで検索してみてください'
+              : '右下の「＋」ボタンからゲームを追加しましょう'}
+          </Typography>
         </Box>
+      ) : (
+        // ゲームカードグリッド
+        <Grid container spacing={2}>
+          {filteredAndSortedGames.map((game, index) => (
+            <Grid
+              key={game.id}
+              size={{ xs: 12, sm: 6, md: 4 }}
+              sx={{
+                // 各カードに遅延付きのフェードインアニメーション
+                animation: 'm3-fade-in 300ms cubic-bezier(0.2, 0, 0, 1) both',
+                animationDelay: `${index * 50}ms`,
+              }}
+            >
+              <BoardGameCard
+                game={game}
+                onEdit={(g) => { setSelectedGame(g); setEditDialogOpen(true); }}
+                onDelete={(g) => { setSelectedGame(g); setDeleteDialogOpen(true); }}
+                onEvaluation={(g) => { setSelectedGame(g); setEvaluationDialogOpen(true); }}
+                onTagClick={handleTagClick}
+                onCardClick={(g) => { setDetailGame(g); setDetailDialogOpen(true); }}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-            <Tabs value={tabIndex} onChange={handleTabChange} aria-label="basic tabs example">
-                <Tab label="ボードゲーム一覧" />
-                <Tab label="戦績履歴" />
-                <Tab label="ユーザー一覧" />
-            </Tabs>
-        </Box>
+      {/* --- FAB: ゲーム追加ボタン（ログイン時のみ表示） --- */}
+      {customUser && (
+        <Fab
+          color="primary"
+          aria-label="ゲームを追加"
+          onClick={() => setAddDialogOpen(true)}
+          sx={{
+            position: 'fixed',
+            // モバイルではBottom Navの上に配置
+            bottom: { xs: 96, sm: 24 },
+            right: 24,
+            // M3 FABスタイル
+            boxShadow: '0px 3px 5px -1px rgba(0,0,0,0.2), 0px 6px 10px 0px rgba(0,0,0,0.14), 0px 1px 18px 0px rgba(0,0,0,0.12)',
+            '&:hover': {
+              transform: 'scale(1.05)',
+            },
+            transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
 
-        <Box role="tabpanel" hidden={tabIndex !== 0} sx={{ display: tabIndex === 0 ? 'block' : 'none' }}>
-            <BoardGameFilter
-            searchQuery={filterState.searchQuery}
-            onSearchChange={filterState.setSearchQuery}
-            sortBy={filterState.sortBy}
-            onSortChange={filterState.setSortBy}
-            filterTags={filterState.filterTags}
-            onTagDelete={handlers.handleTagDelete}
-            onClearTags={() => filterState.setFilterTags([])}
-            onlyOwned={filterState.onlyOwned}
-            onOnlyOwnedChange={filterState.setOnlyOwned}
-            />
-
-            <BoardGameList
-            games={filteredBoardGames}
-            loading={loading}
-            error={error}
-            onEdit={handlers.handleEditClick}
-            onDelete={handlers.handleDeleteClick}
-            onEvaluation={handlers.handleEvaluationClick}
-            onTagClick={handlers.handleTagClick}
-            onAdd={() => dialogState.setOpenAddDialog(true)}
-            onClearFilter={() => { filterState.setSearchQuery(''); filterState.setFilterTags([]); }}
-            isEmptyResult={filteredBoardGames.length === 0 && boardGames.length > 0}
-            />
-        </Box>
-
-        <Box role="tabpanel" hidden={tabIndex !== 1} sx={{ display: tabIndex === 1 ? 'block' : 'none' }}>
-            <MatchList key={matchListKey} onEdit={handleEditMatch} />
-        </Box>
-
-        <Box role="tabpanel" hidden={tabIndex !== 2} sx={{ display: tabIndex === 2 ? 'block' : 'none' }}>
-            <UserListTab />
-        </Box>
-
-      </Container>
-
+      {/* --- 各種ダイアログ --- */}
       <AddBoardgameDialog
-        open={dialogState.openAddDialog}
-        onClose={() => dialogState.setOpenAddDialog(false)}
-        onSuccess={handlers.refreshData}
-      />
-      <MatchDialog
-        open={openMatchDialog}
-        onClose={() => setOpenMatchDialog(false)}
-        boardGames={boardGames}
-        onSuccess={handleMatchSuccess}
-        mode={matchDialogMode}
-        initialData={selectedMatch}
-      />
-      <EditBoardgameDialog
-        open={dialogState.openEditDialog}
-        onClose={() => dialogState.setOpenEditDialog(false)}
-        game={selectionState.selectedGame}
-        onSuccess={handlers.refreshData}
-      />
-      <ConfirmDialog
-        open={dialogState.openDeleteConfirm}
-        onCancel={() => dialogState.setOpenDeleteConfirm(false)}
-        onConfirm={handlers.handleDeleteConfirm}
-        title="ボードゲームの削除"
-        message={`本当に「${selectionState.selectedGame?.name}」を削除しますか？この操作は元に戻せません。`}
-        confirmText="削除"
-        isDangerous={true}
-      />
-      <EditUserEvaluationDialog
-        open={dialogState.openEvaluationDialog}
-        onClose={() => dialogState.setOpenEvaluationDialog(false)}
-        game={selectionState.selectedGame}
-        onSuccess={handlers.refreshData}
-      />
-      <BodogeGachaDialog
-        open={dialogState.openGachaDialog}
-        onClose={handlers.handleGacha}
-        allTags={allTags}
-      />
-      <GachaResultDialog
-        open={dialogState.openGachaResult}
-        onClose={() => dialogState.setOpenGachaResult(false)}
-        game={selectionState.gachaResultGame}
+        open={addDialogOpen}
+        onClose={() => setAddDialogOpen(false)}
+        onSuccess={() => { setAddDialogOpen(false); showSnackbar('ボードゲームを追加しました'); }}
       />
 
+      {selectedGame && (
+        <>
+          <EditBoardgameDialog
+            open={editDialogOpen}
+            onClose={() => { setEditDialogOpen(false); setSelectedGame(null); }}
+            game={selectedGame}
+            onSuccess={() => { setEditDialogOpen(false); setSelectedGame(null); showSnackbar('ボードゲームを更新しました'); }}
+          />
+          <EditUserEvaluationDialog
+            open={evaluationDialogOpen}
+            onClose={() => { setEvaluationDialogOpen(false); setSelectedGame(null); }}
+            game={selectedGame}
+            onSuccess={() => {
+              setEvaluationDialogOpen(false);
+              setSelectedGame(null);
+              showSnackbar('評価を更新しました');
+              // 評価保存後にボードゲームデータを再取得してカード上の星を即座に反映
+              refetch();
+            }}
+          />
+        </>
+      )}
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="ボードゲームの削除"
+        message={`「${selectedGame?.name}」を削除してもよろしいですか？`}
+        onConfirm={handleDelete}
+        onCancel={() => { setDeleteDialogOpen(false); setSelectedGame(null); }}
+        isDangerous
+      />
+
+      {/* ゲーム詳細ダイアログ */}
+      <GameDetailDialog
+        open={detailDialogOpen}
+        onClose={() => { setDetailDialogOpen(false); setDetailGame(null); }}
+        game={detailGame}
+      />
+
+      {/* 通知Snackbar */}
       <Snackbar
-        open={snackbarState.openSnackbar}
-        autoHideDuration={6000}
-        onClose={() => snackbarState.setOpenSnackbar(false)}
-        message={snackbarState.snackbarMessage}
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
         action={
-          <IconButton size="small" color="inherit" onClick={() => snackbarState.setOpenSnackbar(false)}>
+          <IconButton size="small" color="inherit" onClick={() => setSnackbarOpen(false)}>
             <CloseIcon fontSize="small" />
           </IconButton>
         }
