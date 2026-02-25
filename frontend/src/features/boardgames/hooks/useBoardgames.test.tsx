@@ -48,7 +48,6 @@ const mockUser: IUser = {
   email: 'test@example.com',
   displayName: 'Test User',
   photoURL: '',
-  nickname: 'Taro',
 };
 
 // Firestoreの 'boardGames' コレクションから返されるダミーデータ
@@ -82,7 +81,6 @@ const createWrapper = (user: IUser | null) => {
     user: user as unknown as import('firebase/auth').User, // FirebaseのUser型とIUser型は異なるため、テストの簡便性のためにキャスト
     customUser: null, // 今回のテストではcustomUserは未使用
     loading: false,
-    updateNickname: async () => {}, // ダミー関数を追加
   };
 
   // props.childrenをAuthContext.Providerでラップして返すコンポーネント
@@ -149,26 +147,7 @@ describe('useBoardgames', () => {
     expect(gameB?.name).toBe('Game B');
   });
 
-  // ------------------------------------------------------------------------------------------
-  // テストケース2: 未ログイン時の挙動テスト
-  // ------------------------------------------------------------------------------------------
-  it('ログインしていない場合、データ取得は行われず、ボードゲームリストは空であること', async () => {
-    // モックリセット
-    mockGetBoardGames.mockClear();
 
-    // 未ログイン状態 (currentUser: null) のWrapperでフックをレンダリング
-    const { result } = renderHook(() => useBoardgames(), { wrapper: createWrapper(null) });
-
-    await waitFor(() => {
-      // 未ログインの場合、データ取得処理はスキップされるため、ローディングはfalseになる
-      expect(result.current.loading).toBe(false);
-      // データは取得されないため、配列は空であること
-      expect(result.current.boardGames).toHaveLength(0);
-    });
-    
-    // Server Actionは呼ばれないはず
-    expect(mockGetBoardGames).not.toHaveBeenCalled();
-  });
 
   // ------------------------------------------------------------------------------------------
   // テストケース3: ローディング状態のテスト

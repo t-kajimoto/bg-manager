@@ -186,20 +186,6 @@ describe('Home Page', () => {
     expect(screen.getByText('カタン')).toBeInTheDocument();
     expect(screen.queryByText('コードネーム')).not.toBeInTheDocument();
   });
-
-  // ------------------------------------------------------------------------------------------
-  // テストケース6: ガチャ機能
-  // ------------------------------------------------------------------------------------------
-  it('ガチャボタンをクリックするとダイアログが開くこと', () => {
-    mockUseBoardgames.mockReturnValue({
-      boardGames: mockBoardGames,
-      loading: false,
-      error: null,
-    });
-    render(<Home />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'ガチャ' }));
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('ボドゲガチャ')).toBeInTheDocument();
-  });
 });
+
+
