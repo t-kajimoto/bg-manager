@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .from("profiles")
           .select("*")
           .eq("id", sessionUser.id)
-          .single();
+          .maybeSingle();
 
         if (mounted) {
           if (profile) {
@@ -243,8 +243,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ username: nickname })
-        .eq("id", user.id);
+        .upsert({ id: user.id, username: nickname });
 
       if (error) {
         console.error("Error updating nickname:", error);
@@ -273,7 +272,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          id: user.id,
           display_name: data.displayName,
           discriminator: data.discriminator,
           bio: data.bio,
@@ -283,8 +283,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           visibility_matches: data.visibilityMatches,
           visibility_friends: data.visibilityFriends,
           visibility_user_list: data.visibilityUserList,
-        })
-        .eq("id", user.id);
+          updated_at: new Date().toISOString(),
+        });
 
       if (error) {
         console.error("Error updating profile:", error);
