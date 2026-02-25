@@ -36,10 +36,14 @@ export default function Header() {
   const handleLogin = async () => {
     if (process.env.NEXT_PUBLIC_USE_MOCK === 'true') return;
 
+    // Firebase App Hosting環境(Cloud Run)上で、window.location.origin が 0.0.0.0:8080 に
+    // なってしまう問題への対応。NEXT_PUBLIC_SITE_URL が設定されていればそれを優先する。
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback`,
       },
     });
   };
