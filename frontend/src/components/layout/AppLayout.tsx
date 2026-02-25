@@ -76,12 +76,12 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       {/* --- Top App Bar --- */}
       <Header />
 
       {/* --- メインエリア（Navigation + Content） --- */}
-      <Box sx={{ display: 'flex', flexGrow: 1 }}>
+      <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         {/* ナビゲーション: ガチャボタンのクリックハンドラを接続 */}
         <AppNavigation onGachaClick={() => setGachaDialogOpen(true)} />
 
@@ -97,13 +97,13 @@ export function AppLayout({ children }: AppLayoutProps) {
             px: { xs: 2, sm: 3, md: 4 },
             // モバイルではBottom Navの高さ＋αの十分な下パディング
             pb: { xs: '112px', sm: 3, md: 4 },
-            // フェードインアニメーション
-            animation: 'm3-fade-in 300ms cubic-bezier(0.2, 0, 0, 1) both',
             // ナビゲーション幅変更時のスムーズなトランジション
             transition: theme.transitions.create('margin-left', {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
+            height: '100%',
+            overflowY: 'auto',
           }}
         >
           {children}
