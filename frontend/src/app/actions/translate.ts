@@ -31,12 +31,20 @@ export async function translateText(text: string): Promise<string> {
       },
     });
 
-    const prompt = `Translate the following board game description into natural, engaging Japanese suitable for board game enthusiasts. 
-    
+    const prompt = `あなたは日本語のプロ編集者です。下の「元の文章」を、意味と事実関係は変えずに、読み手が「人が書いた」と感じる自然な日本語の要約に書き直してください。
+
+    【厳守ルール】
+    1. 文字数は必ず【200文字以内】に収めること。
+    2. ゲームの「目的」と「面白いポイント」が明確に伝わるようにすること。
+    3. AIっぽさ（テンプレ感、記号過多、過剰な丁寧さ、抽象語の空回り）を完全に消し、いきなり本文として自然に書き出すこと。
+    4. 内容の捏造や、根拠のない数字・固有名詞の追加はしない。
+    5. 「重要」「効果的」「最適」などの抽象語で押し切らず、「何がどうなるか」が伝わる具体的な表現にする。
+    6. Markdown記法（太字、見出しなど）や、「」、()などの記号を多用しない。
+
     Original Text:
     ${text}
     
-    Return the result in JSON format with a "translation" key.`;
+    Return the result in JSON format with a "translation" key containing the Japanese text.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
