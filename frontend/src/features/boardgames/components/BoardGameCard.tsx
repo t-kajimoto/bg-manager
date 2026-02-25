@@ -14,14 +14,13 @@ interface BoardGameCardProps {
   game: IBoardGame;
   onEdit?: (game: IBoardGame) => void;
   onDelete?: (game: IBoardGame) => void;
-  onEvaluation?: (game: IBoardGame) => void;
   onTagClick: (tag: string) => void;
   /** カード本体（タイトル・画像）クリック時のコールバック */
   onCardClick?: (game: IBoardGame) => void;
   readOnly?: boolean;
 }
 
-export const BoardGameCard = ({ game, onEdit, onDelete, onEvaluation, onTagClick, onCardClick, readOnly }: BoardGameCardProps) => {
+export const BoardGameCard = ({ game, onEdit, onDelete, onTagClick, onCardClick, readOnly }: BoardGameCardProps) => {
   const { customUser } = useAuth();
 
   return (
@@ -86,8 +85,8 @@ export const BoardGameCard = ({ game, onEdit, onDelete, onEvaluation, onTagClick
         </Box>
 
         <Box
-          sx={{ mt: 2, cursor: !readOnly && customUser ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 1 }}
-          onClick={() => !readOnly && onEvaluation && onEvaluation(game)}
+          sx={{ mt: 2, cursor: onCardClick ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 1 }}
+          onClick={() => onCardClick && onCardClick(game)}
         >
           <Rating value={readOnly ? game.averageEvaluation : game.evaluation} readOnly size="small" />
           <Typography variant="caption">{readOnly ? '平均評価' : 'あなたの評価'}</Typography>

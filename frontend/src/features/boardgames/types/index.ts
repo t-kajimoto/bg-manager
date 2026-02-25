@@ -56,6 +56,22 @@ export interface IBoardGameData {
 }
 
 /**
+ * @interface IBoardGameEvaluation
+ * @description
+ * ボードゲームに対するユーザーの評価情報（全ユーザー・フレンド機能用）を表すインターフェースです。
+ */
+export interface IBoardGameEvaluation {
+  userId: string;
+  userName: string;
+  avatarUrl: string | null;
+  evaluation: number;
+  comment: string;
+  played: boolean;
+  isOwned: boolean;
+  updatedAt: string;
+}
+
+/**
  * @interface IBoardGameUser
  * @description
  * ユーザー一人ひとりの、特定のボードゲームに対するインタラクション情報を定義するインターフェースです。

@@ -13,7 +13,6 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import { useAuth } from "@/contexts/AuthContext";
 import { AddBoardgameDialog } from "@/features/boardgames/components/AddBoardgameDialog";
 import { EditBoardgameDialog } from "@/features/boardgames/components/EditBoardgameDialog";
-import { EditUserEvaluationDialog } from "@/features/boardgames/components/EditUserEvaluationDialog";
 import { BoardGameCard } from "@/features/boardgames/components/BoardGameCard";
 import { useBoardgames } from "@/features/boardgames/hooks/useBoardgames";
 import { IBoardGame } from "@/features/boardgames/types";
@@ -36,7 +35,6 @@ export default function Home() {
   // --- ダイアログの開閉状態 ---
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [evaluationDialogOpen, setEvaluationDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
@@ -312,7 +310,6 @@ export default function Home() {
                 game={game}
                 onEdit={(g) => { setSelectedGame(g); setEditDialogOpen(true); }}
                 onDelete={(g) => { setSelectedGame(g); setDeleteDialogOpen(true); }}
-                onEvaluation={(g) => { setSelectedGame(g); setEvaluationDialogOpen(true); }}
                 onTagClick={handleTagClick}
                 onCardClick={(g) => { setDetailGame(g); setDetailDialogOpen(true); }}
               />
@@ -377,18 +374,6 @@ export default function Home() {
             game={selectedGame}
             onSuccess={() => { setEditDialogOpen(false); setSelectedGame(null); showSnackbar('ボードゲームを更新しました'); }}
           />
-          <EditUserEvaluationDialog
-            open={evaluationDialogOpen}
-            onClose={() => { setEvaluationDialogOpen(false); setSelectedGame(null); }}
-            game={selectedGame}
-            onSuccess={() => {
-              setEvaluationDialogOpen(false);
-              setSelectedGame(null);
-              showSnackbar('評価を更新しました');
-              // 評価保存後にボードゲームデータを再取得してカード上の星を即座に反映
-              refetch();
-            }}
-          />
         </>
       )}
 
@@ -407,6 +392,10 @@ export default function Home() {
         open={detailDialogOpen}
         onClose={() => { setDetailDialogOpen(false); setDetailGame(null); }}
         game={detailGame}
+        onEvaluationUpdated={() => {
+          showSnackbar('登録情報を更新しました');
+          refetch();
+        }}
       />
 
       {/* 通知Snackbar */}

@@ -13,7 +13,6 @@ interface BoardGameListProps {
   error: Error | null;
   onEdit?: (game: IBoardGame) => void;
   onDelete?: (game: IBoardGame) => void;
-  onEvaluation?: (game: IBoardGame) => void;
   onTagClick: (tag: string) => void;
   onAdd?: () => void;
   onClearFilter?: () => void;
@@ -27,7 +26,6 @@ export const BoardGameList = ({
   error,
   onEdit,
   onDelete,
-  onEvaluation,
   onTagClick,
   onAdd,
   onClearFilter,
@@ -97,7 +95,6 @@ export const BoardGameList = ({
             game={game}
             onEdit={onEdit}
             onDelete={onDelete}
-            onEvaluation={onEvaluation}
             onTagClick={onTagClick}
             readOnly={readOnly}
           />

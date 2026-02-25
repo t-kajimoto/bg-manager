@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Alert, Autocomplete, Chip, FormControlLabel, Checkbox } from '@mui/material';
 import { IBoardGame } from '@/features/boardgames/types';
-import { updateBoardGame } from '@/app/actions/boardgames';
+import { updateBoardGame, getAllTags } from '@/app/actions/boardgames';
 import { BaseDialog } from '@/components/ui/BaseDialog';
 
 interface EditBoardgameDialogProps {
@@ -29,8 +29,6 @@ type BoardGameFormInput = {
   designers: string;
   artists: string;
   publishers: string;
-  mechanics: string;
-  categories: string;
   averageRating: number;
   complexity: number;
 };
@@ -41,6 +39,19 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
   const { control, handleSubmit, reset, formState: { errors } } = useForm<BoardGameFormInput>();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Available tags for Autocomplete
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      getAllTags().then(res => {
+        if (res.data) {
+          setAvailableTags(res.data);
+        }
+      });
+    }
+  }, [open]);
 
   useEffect(() => {
     if (game) {
@@ -58,8 +69,6 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
         designers: game.designers?.join(', ') || '',
         artists: game.artists?.join(', ') || '',
         publishers: game.publishers?.join(', ') || '',
-        mechanics: game.mechanics?.join(', ') || '',
-        categories: game.categories?.join(', ') || '',
         averageRating: game.averageRating || 0,
         complexity: game.complexity || 0,
       });
@@ -87,8 +96,6 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
       designers: data.designers.split(',').map(s => s.trim()).filter(Boolean),
       artists: data.artists.split(',').map(s => s.trim()).filter(Boolean),
       publishers: data.publishers.split(',').map(s => s.trim()).filter(Boolean),
-      mechanics: data.mechanics.split(',').map(s => s.trim()).filter(Boolean),
-      categories: data.categories.split(',').map(s => s.trim()).filter(Boolean),
       averageRating: Number(data.averageRating),
       complexity: Number(data.complexity),
     };
@@ -176,7 +183,7 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
                 <Autocomplete
                   multiple
                   freeSolo
-                  options={[]}
+                  options={availableTags}
                   value={value || []}
                   onChange={(_, newValue) => onChange(newValue)}
                   renderTags={(tagValue, getTagProps) =>
@@ -227,19 +234,6 @@ export const EditBoardgameDialog = ({ open, onClose, game, onSuccess }: EditBoar
                 <TextField {...field} label="パブリッシャー" fullWidth disabled={loading} />
               )}
             />
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Controller name="mechanics" control={control}
-                render={({ field }) => (
-                  <TextField {...field} label="メカニクス" fullWidth disabled={loading} />
-                )}
-              />
-              <Controller name="categories" control={control}
-                render={({ field }) => (
-                  <TextField {...field} label="カテゴリー" fullWidth disabled={loading} />
-                )}
-              />
-            </Box>
 
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Controller name="averageRating" control={control}

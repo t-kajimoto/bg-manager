@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { TextField, Button, CircularProgress, useTheme, useMediaQuery, Box, Alert, Autocomplete, debounce, Avatar, FormControlLabel, Checkbox, Chip } from '@mui/material';
-import { addBoardGame } from '@/app/actions/boardgames';
+import { addBoardGame, getAllTags } from '@/app/actions/boardgames';
 import { searchBoardGame, getBoardGameDetails, BGGCandidate, BGGDetails } from '@/app/actions/bgg';
 import { BaseDialog } from '@/components/ui/BaseDialog';
 import { translateText } from '@/app/actions/translate';
@@ -26,8 +26,6 @@ type BoardGameFormInput = {
   designers: string;
   artists: string;
   publishers: string;
-  mechanics: string;
-  categories: string;
   averageRating: number;
   complexity: number;
   bggId?: string;
@@ -53,6 +51,9 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
   const [selectedBGGDetails, setSelectedBGGDetails] = useState<BGGDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
+  // Available tags for Autocomplete
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+
   const {
     control,
     handleSubmit,
@@ -75,8 +76,6 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
       designers: '',
       artists: '',
       publishers: '',
-      mechanics: '',
-      categories: '',
       averageRating: 0,
       complexity: 0,
       bggId: '',
@@ -105,15 +104,24 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
     }
 
     searchBGG({ input: inputValue }, (results?: BGGCandidate[]) => {
-      if (active && results) {
-        setOptions(results);
-      }
+      // ...
     });
 
     return () => {
       active = false;
     };
   }, [inputValue, searchBGG]);
+
+  // Fetch all existing tags when dialog opens
+  useEffect(() => {
+    if (open) {
+      getAllTags().then(res => {
+        if (res.data) {
+          setAvailableTags(res.data);
+        }
+      });
+    }
+  }, [open]);
 
   const handleFormSubmit: SubmitHandler<BoardGameFormInput> = async (data) => {
     setLoading(true);
@@ -133,8 +141,6 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
         designers: data.designers.split(',').map(s => s.trim()).filter(Boolean),
         artists: data.artists.split(',').map(s => s.trim()).filter(Boolean),
         publishers: data.publishers.split(',').map(s => s.trim()).filter(Boolean),
-        mechanics: data.mechanics.split(',').map(s => s.trim()).filter(Boolean),
-        categories: data.categories.split(',').map(s => s.trim()).filter(Boolean),
         averageRating: Number(data.averageRating) || 0,
         complexity: Number(data.complexity) || 0,
         bggId: data.bggId || selectedBGGDetails?.id,
@@ -259,8 +265,13 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
                                     setValue('designers', details.designers?.join(', ') || '');
                                     setValue('artists', details.artists?.join(', ') || '');
                                     setValue('publishers', details.publishers?.join(', ') || '');
-                                    setValue('mechanics', details.mechanics?.join(', ') || '');
-                                    setValue('categories', details.categories?.join(', ') || '');
+                                    
+                                    // BGGから取得したカテゴリやメカニクス（英語）を初期タグとして追加
+                                    const bggCategories = details.categories || [];
+                                    const bggMechanics = details.mechanics || [];
+                                    const newTags = Array.from(new Set([...bggCategories, ...bggMechanics]));
+                                    setValue('tags', newTags);
+
                                     setValue('averageRating', details.averageRating ? parseFloat(details.averageRating.toFixed(1)) : 0);
                                     setValue('complexity', details.complexity ? parseFloat(details.complexity.toFixed(1)) : 0);
                                     // Set hidden BGG fields
@@ -353,7 +364,7 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
                 <Autocomplete
                   multiple
                   freeSolo
-                  options={[]}
+                  options={availableTags}
                   value={value || []}
                   onChange={(_, newValue) => onChange(newValue)}
                   renderTags={(tagValue, getTagProps) =>
@@ -415,19 +426,6 @@ export const AddBoardgameDialog = ({ open, onClose, onSuccess }: AddBoardgameDia
                 <TextField {...field} label="パブリッシャー" fullWidth disabled={loading || !!selectedBGGDetails} />
               )}
             />
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Controller name="mechanics" control={control}
-                render={({ field }) => (
-                  <TextField {...field} label="メカニクス" fullWidth disabled={loading || !!selectedBGGDetails} />
-                )}
-              />
-              <Controller name="categories" control={control}
-                render={({ field }) => (
-                  <TextField {...field} label="カテゴリー" fullWidth disabled={loading || !!selectedBGGDetails} />
-                )}
-              />
-            </Box>
 
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Controller name="averageRating" control={control}

@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { IBoardGame } from '@/features/boardgames/types';
+import { IBoardGame, IBoardGameEvaluation } from '@/features/boardgames/types';
 import { IMatch } from '@/features/matches/types';
 import { revalidatePath } from 'next/cache';
 
@@ -152,6 +152,43 @@ export async function getBoardGames(
   }
 }
 
+// -----------------------------------------------------
+// GET ALL UNIQUE TAGS
+// -----------------------------------------------------
+
+/**
+ * DB内の board_games テーブル全体から重複のないタグの一覧を取得します
+ */
+export async function getAllTags(): Promise<{
+  data: string[];
+  error: string | null;
+}> {
+  const supabase = await createClient();
+
+  try {
+    const { data: games, error } = await supabase
+      .from('board_games')
+      .select('tags')
+      .not('tags', 'is', null);
+
+    if (error) {
+      throw error;
+    }
+
+    const allTags = new Set<string>();
+    games.forEach((game) => {
+      if (game.tags && Array.isArray(game.tags)) {
+        game.tags.forEach((tag: string) => allTags.add(tag));
+      }
+    });
+
+    return { data: Array.from(allTags).sort(), error: null };
+  } catch (error: any) {
+    console.error('Error fetching tags:', error);
+    return { data: [], error: error.message };
+  }
+}
+
 export async function addBoardGame(game: {
   name: string;
   min: number;
@@ -169,8 +206,7 @@ export async function addBoardGame(game: {
   designers?: string[];
   artists?: string[];
   publishers?: string[];
-  mechanics?: string[];
-  categories?: string[];
+  publishers?: string[];
   averageRating?: number;
   complexity?: number;
 }) {
@@ -203,8 +239,6 @@ export async function addBoardGame(game: {
         designers: game.designers,
         artists: game.artists,
         publishers: game.publishers,
-        mechanics: game.mechanics,
-        categories: game.categories,
         average_rating: game.averageRating,
         complexity: game.complexity,
       })
@@ -254,8 +288,7 @@ export async function updateBoardGame(game: {
   designers?: string[];
   artists?: string[];
   publishers?: string[];
-  mechanics?: string[];
-  categories?: string[];
+  publishers?: string[];
   averageRating?: number;
   complexity?: number;
 }) {
@@ -321,6 +354,7 @@ export async function updateUserGameState(data: {
   played?: boolean;
   evaluation?: number;
   comment?: string;
+  isOwned?: boolean;
 }) {
   const supabase = await createClient();
   const {
@@ -330,20 +364,6 @@ export async function updateUserGameState(data: {
   if (!user) return { error: 'Not authenticated' };
 
   try {
-    // Upsert logic
-    // First, we need to handle "partial" updates effectively.
-    // Supabase `upsert` replaces the row if PK matches.
-    // If we want to update only specific fields without overwriting others with null,
-    // we might need to fetch first or use dynamic query building?
-    // Actually, for this specific table (user_id, board_game_id),
-    // we typically send the FULL state from the client or we just update what changed.
-    // However, `upsert` expects a complete row or defaults.
-    // Let's use `select` to check existence then `update` or `insert`?
-    // OR, just use upsert with all fields if the client sends them.
-    // For simpler "toggle played", we assume client sends only changed field.
-    // If so, `update` is better, but what if new?
-    // Let's safe-guard by checking first.
-
     const { data: existing } = await supabase
       .from('user_board_game_states')
       .select('*')
@@ -372,6 +392,21 @@ export async function updateUserGameState(data: {
         comment: data.comment ?? null,
       });
       if (error) throw error;
+    }
+
+    if (data.isOwned !== undefined) {
+      if (data.isOwned) {
+        await supabase.from('owned_games').upsert({
+          user_id: user.id,
+          board_game_id: data.boardGameId,
+        });
+      } else {
+        await supabase
+          .from('owned_games')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('board_game_id', data.boardGameId);
+      }
     }
 
     revalidatePath('/');
@@ -690,5 +725,70 @@ export async function uploadMatchImage(file: File) {
   } catch (error) {
     console.error('Error uploading image:', error);
     return { error: 'Upload failed' };
+  }
+}
+
+/**
+ * 指定のボードゲームに対する全ユーザーの評価情報を取得する
+ */
+export async function getBoardGameEvaluations(
+  boardGameId: string,
+): Promise<{ data: IBoardGameEvaluation[]; error: string | null }> {
+  const supabase = await createClient();
+  try {
+    const { data: states, error: statesError } = await supabase
+      .from('user_board_game_states')
+      .select(
+        'user_id, evaluation, comment, played, updated_at, created_at, profiles(display_name, avatar_url, discriminator)',
+      )
+      .eq('board_game_id', boardGameId);
+
+    if (statesError) throw statesError;
+
+    const { data: owned, error: ownedError } = await supabase
+      .from('owned_games')
+      .select('user_id')
+      .eq('board_game_id', boardGameId);
+
+    if (ownedError) throw ownedError;
+
+    const ownedUserIds = new Set(owned?.map((o) => o.user_id) || []);
+
+    const evaluations: IBoardGameEvaluation[] = states.map((state: any) => {
+      const profile = Array.isArray(state.profiles)
+        ? state.profiles[0]
+        : state.profiles;
+      const formattedName = profile
+        ? profile.discriminator
+          ? `${profile.display_name}#${profile.discriminator}`
+          : profile.display_name
+        : '名称未設定ユーザー';
+
+      return {
+        userId: state.user_id,
+        userName: formattedName,
+        avatarUrl: profile?.avatar_url || null,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        evaluation: state.evaluation || 0,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        comment: state.comment || '',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        played: state.played || false,
+        isOwned: ownedUserIds.has(state.user_id),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        updatedAt: state.updated_at || state.created_at,
+      };
+    });
+
+    // 評価が高い順、同点なら更新日が新しい順にソートする
+    evaluations.sort((a, b) => {
+      if (b.evaluation !== a.evaluation) return b.evaluation - a.evaluation;
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+
+    return { data: evaluations, error: null };
+  } catch (error) {
+    console.error('Error in getBoardGameEvaluations:', error);
+    return { data: [], error: 'Failed to fetch evaluations' };
   }
 }
