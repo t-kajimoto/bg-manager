@@ -23,7 +23,7 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 // @ts-ignore: Depending on SDK version, googleSearch may not be officially typed, but works on backend
 const model = genAI.getGenerativeModel({
   model: 'gemini-2.5-flash',
-  tools: [{ googleSearch: {} }],
+  tools: [{ googleSearch: {} } as any],
 });
 
 async function run() {
