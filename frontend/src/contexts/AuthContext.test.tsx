@@ -38,29 +38,10 @@ describe('AuthContext', () => {
       email: 'mock@example.com',
     }));
     expect(result.current.customUser).toEqual(expect.objectContaining({
-      nickname: 'MockNick',
       isAdmin: true,
     }));
   });
 
-  test('should update nickname in mock mode', async () => {
-    process.env.NEXT_PUBLIC_USE_MOCK = 'true';
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <AuthProvider>{children}</AuthProvider>
-    );
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    await act(async () => {
-      await result.current.updateNickname('NewNick');
-    });
-
-    expect(result.current.customUser?.nickname).toBe('NewNick');
-  });
 
 });

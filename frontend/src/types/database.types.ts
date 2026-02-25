@@ -50,27 +50,39 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null;
-          full_name: string | null;
+          bio: string | null;
+          discriminator: string | null;
+          display_name: string | null;
           id: string;
           updated_at: string | null;
-          username: string | null;
-          website: string | null;
+          visibility_friends: string | null;
+          visibility_games: string | null;
+          visibility_matches: string | null;
+          visibility_user_list: string | null;
         };
         Insert: {
           avatar_url?: string | null;
-          full_name?: string | null;
+          bio?: string | null;
+          discriminator?: string | null;
+          display_name?: string | null;
           id: string;
           updated_at?: string | null;
-          username?: string | null;
-          website?: string | null;
+          visibility_friends?: string | null;
+          visibility_games?: string | null;
+          visibility_matches?: string | null;
+          visibility_user_list?: string | null;
         };
         Update: {
           avatar_url?: string | null;
-          full_name?: string | null;
+          bio?: string | null;
+          discriminator?: string | null;
+          display_name?: string | null;
           id?: string;
           updated_at?: string | null;
-          username?: string | null;
-          website?: string | null;
+          visibility_friends?: string | null;
+          visibility_games?: string | null;
+          visibility_matches?: string | null;
+          visibility_user_list?: string | null;
         };
         Relationships: [];
       };

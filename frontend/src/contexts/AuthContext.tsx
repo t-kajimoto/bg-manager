@@ -23,7 +23,6 @@ export type Visibility = "public" | "friends" | "private";
  * @description Supabaseのprofilesテーブルに保存されている、アプリケーション独自のユーザー情報の型定義です。
  */
 interface ICustomUser {
-  nickname: string;
   isAdmin: boolean;
   /** profilesテーブルにdiscriminatorが設定済みかどうかのフラグ */
   isProfileSetup: boolean;
@@ -47,7 +46,6 @@ export interface AuthContextType {
   session: Session | null;
   customUser: ICustomUser | null;
   loading: boolean;
-  updateNickname: (nickname: string) => Promise<void>;
   updateProfile: (data: Partial<ICustomUser>) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -60,7 +58,6 @@ export const AuthContext = createContext<AuthContextType>({
   session: null,
   customUser: null,
   loading: true,
-  updateNickname: async () => {},
   updateProfile: async () => {},
   signOut: async () => {},
 });
@@ -90,7 +87,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       } as unknown as User);
       setCustomUser({
-        nickname: MOCK_USER.nickname || "",
         isAdmin: MOCK_USER.isAdmin || false,
         isProfileSetup: true,
       });
@@ -122,13 +118,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 .eq("id", sessionUser.id);
             }
 
+            const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
+            const isUserAdmin = adminEmails.includes(sessionUser.email || '') || profile.display_name === "admin"; // 後方互換性のため残すが、後日削除推奨
+
             setCustomUser({
-              nickname:
-                profile.username ||
-                sessionUser.user_metadata?.full_name ||
-                "No Name",
-              isAdmin: profile.username === "admin",
-              // discriminatorが存在すれば初期設定完了とみなす
+              isAdmin: isUserAdmin,
               isProfileSetup: !!profile.discriminator,
               displayName:
                 profile.display_name || sessionUser.user_metadata?.full_name,
@@ -143,7 +137,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           } else {
             setCustomUser({
-              nickname: sessionUser.user_metadata?.full_name || "No Name",
               isAdmin: false,
               // profilesテーブルにレコードがない = 初期設定未完了
               isProfileSetup: false,
@@ -229,34 +222,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [supabase]);
 
-  const updateNickname = async (nickname: string) => {
-    if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
-      setCustomUser((prev) => (prev ? { ...prev, nickname } : null));
-      return;
-    }
-    if (!user) return;
 
-    // Optimistic Update
-    const previousUser = customUser;
-    setCustomUser((prev) => (prev ? { ...prev, nickname } : null));
-
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({ id: user.id, username: nickname });
-
-      if (error) {
-        console.error("Error updating nickname:", error);
-        // Revert on error
-        setCustomUser(previousUser);
-        throw error; // Component側でエラーハンドリングできるように再スロー
-      }
-    } catch (error) {
-      console.error("Error updating nickname:", error);
-      setCustomUser(previousUser);
-      throw error;
-    }
-  };
 
   const updateProfile = async (data: Partial<ICustomUser>) => {
     if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
@@ -278,7 +244,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           discriminator: data.discriminator,
           bio: data.bio,
           avatar_url: data.photoURL,
-          // username は文字数制約や一意制約と衝突するため同期しない
           visibility_games: data.visibilityGames,
           visibility_matches: data.visibilityMatches,
           visibility_friends: data.visibilityFriends,
@@ -309,7 +274,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       session,
       customUser,
       loading,
-      updateNickname,
       updateProfile,
       signOut,
     }),

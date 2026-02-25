@@ -2,13 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-export interface IProfile {
+export interface Profile {
   id: string;
-  username: string | null;
-  full_name: string | null;
   avatar_url: string | null;
   display_name: string | null;
   discriminator: string | null;
+  visibility_user_list: string;
   bio: string | null;
 }
 
@@ -23,13 +22,13 @@ export async function getProfiles() {
     const { data, error } = await supabase
       .from('profiles')
       .select(
-        'id, username, full_name, avatar_url, display_name, discriminator, visibility_user_list, bio',
+        'id, avatar_url, display_name, discriminator, visibility_user_list, bio',
       )
       .neq('visibility_user_list', 'private')
       .order('display_name', { ascending: true });
 
     if (error) throw error;
-    return { data: data as IProfile[], error: null };
+    return { data: data as Profile[], error: null };
   } catch (error) {
     console.error('Error fetching profiles:', error);
     return { data: [], error: 'Failed to fetch profiles' };

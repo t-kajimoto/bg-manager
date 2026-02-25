@@ -161,7 +161,7 @@ export default function Header() {
                 {!isMobile && (
                   <Box component="span" sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                      {customUser?.displayName || customUser?.nickname || user.user_metadata?.full_name}
+                      {customUser?.displayName || user.user_metadata?.full_name || 'No Name'}
                     </Typography>
                     {customUser?.discriminator && (
                       <Typography variant="caption" sx={{ opacity: 0.6 }}>

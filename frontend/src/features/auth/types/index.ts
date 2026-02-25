@@ -13,8 +13,6 @@ export interface IUser {
   displayName: string | null;
   /** Googleアカウントなどのプロフィール写真のURL */
   photoURL: string | null;
-  /** ユーザーがアプリケーション内で設定したニックネーム */
-  nickname: string | null;
   /** ユーザーが管理者権限を持つかを示すフラグ */
   isAdmin?: boolean;
 }

@@ -6,7 +6,6 @@ export const MOCK_USER: IUser = {
   email: 'mock@example.com',
   displayName: 'Mock User',
   photoURL: null,
-  nickname: 'MockNick',
   isAdmin: true,
 };
 

@@ -17,10 +17,8 @@
 erDiagram
     profiles {
         uuid id PK "ユーザーID (id)"
-        text username "ユーザー名 (username)"
         text display_name "表示名 (display_name)"
         text discriminator "識別番号 (discriminator)"
-        text full_name "OAuth由来の名前 (full_name)"
         text bio "自己紹介 (bio)"
         text avatar_url "アバター画像URL (avatar_url)"
         timestamp updated_at "更新日時 (updated_at)"
@@ -115,20 +113,18 @@ erDiagram
 
 ユーザーの公開プロフィール情報を格納します。`auth.users` テーブルと1対1で対応します。
 
-| 論理名 (物理名)                        | データ型    | 必須 | 説明                                         | 備考                   |
-| :------------------------------------- | :---------- | :--- | :------------------------------------------- | :--------------------- |
-| ユーザーID (id)                        | `uuid`      | ✔    | ユーザーを一意に識別するID                   | `auth.users.id` を参照 |
-| ユーザー名 (username)                  | `text`      |      | アプリケーション内で使用する一意のユーザー名 | ユニーク制約           |
-| 表示名 (display_name)                  | `text`      |      | ユーザーが決める表示名                       |                        |
-| 識別番号 (discriminator)               | `text`      |      | 重複を避けるための4桁の数字                  |                        |
-| OAuth上の名前 (full_name)              | `text`      |      | Google等から取得したフルネーム               |                        |
-| 自己紹介 (bio)                         | `text`      |      | 簡単なプロフィール説明                       |                        |
-| アバター画像URL (avatar_url)           | `text`      |      | プロフィール画像のURL                        |                        |
-| 公開設定:ゲーム (visibility_games)     | `text`      | ✔    | 'public', 'friends', 'private'               | デフォルト 'public'    |
-| 公開設定:戦績 (visibility_matches)     | `text`      | ✔    | 'public', 'friends', 'private'               | デフォルト 'public'    |
-| 公開設定:フレンド (visibility_friends) | `text`      | ✔    | 'public', 'friends', 'private'               | デフォルト 'public'    |
-| 公開設定:一覧 (visibility_user_list)   | `text`      | ✔    | 'public', 'friends', 'private'               | デフォルト 'public'    |
-| 更新日時 (updated_at)                  | `timestamp` |      | レコードの最終更新日時                       |                        |
+| 論理名 (物理名)                        | データ型    | 必須 | 説明                           | 備考                   |
+| :------------------------------------- | :---------- | :--- | :----------------------------- | :--------------------- |
+| ユーザーID (id)                        | `uuid`      | ✔    | ユーザーを一意に識別するID     | `auth.users.id` を参照 |
+| 表示名 (display_name)                  | `text`      |      | ユーザーが決める表示名         |                        |
+| 識別番号 (discriminator)               | `text`      |      | 重複を避けるための4桁の数字    |                        |
+| 自己紹介 (bio)                         | `text`      |      | 簡単なプロフィール説明         |                        |
+| アバター画像URL (avatar_url)           | `text`      |      | プロフィール画像のURL          |                        |
+| 公開設定:ゲーム (visibility_games)     | `text`      | ✔    | 'public', 'friends', 'private' | デフォルト 'public'    |
+| 公開設定:戦績 (visibility_matches)     | `text`      | ✔    | 'public', 'friends', 'private' | デフォルト 'public'    |
+| 公開設定:フレンド (visibility_friends) | `text`      | ✔    | 'public', 'friends', 'private' | デフォルト 'public'    |
+| 公開設定:一覧 (visibility_user_list)   | `text`      | ✔    | 'public', 'friends', 'private' | デフォルト 'public'    |
+| 更新日時 (updated_at)                  | `timestamp` |      | レコードの最終更新日時         |                        |
 
 ### 4.2. ボードゲーム (board_games)
 

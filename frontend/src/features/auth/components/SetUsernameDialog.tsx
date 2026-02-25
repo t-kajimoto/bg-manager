@@ -18,8 +18,8 @@ export const SetUsernameDialog = () => {
     // isProfileSetupはAuthContextでdiscriminatorの有無から判定している
     if (!authLoading && user && customUser && !customUser.isProfileSetup) {
       setOpen(true);
-      if (customUser?.nickname && !displayName) {
-        setDisplayName(customUser.nickname);
+      if (user.user_metadata?.full_name && !displayName) {
+        setDisplayName(user.user_metadata.full_name);
       }
     } else {
       setOpen(false);

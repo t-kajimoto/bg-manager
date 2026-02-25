@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Box, Typography, List, ListItem, ListItemAvatar, Avatar, ListItemText, ListItemButton, Paper, CircularProgress, Alert } from '@mui/material';
-import { getProfiles, IProfile } from '@/app/actions/profiles';
+import { getProfiles, Profile } from '@/app/actions/profiles';
 import Link from 'next/link';
 
 /**
@@ -10,7 +10,7 @@ import Link from 'next/link';
  * @description アプリを利用しているユーザーの一覧を表示するコンポーネントです。
  */
 export const UserListTab = () => {
-  const [profiles, setProfiles] = useState<IProfile[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
