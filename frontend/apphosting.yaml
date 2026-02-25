@@ -49,3 +49,8 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_PUBLIC_SITE_URL
+    secret: NEXT_PUBLIC_SITE_URL
+    availability:
+      - BUILD
+      - RUNTIME
