@@ -89,7 +89,7 @@ export async function updateProfile(profileData: UpdateProfileData) {
       discriminator: profileData.discriminator,
       bio: profileData.bio,
       avatar_url: profileData.avatar_url,
-      username: profileData.display_name, // 後方互換性のため一旦usernameも同期
+      // username は文字数制約や一意制約と衝突するため同期しない
       visibility_games: profileData.visibility_games,
       visibility_matches: profileData.visibility_matches,
       visibility_friends: profileData.visibility_friends,
@@ -134,13 +134,11 @@ export async function uploadAvatar(formData: FormData) {
     } = supabase.storage.from('profile_images').getPublicUrl(filePath);
 
     // プロフィール情報をupsertで更新
-    await supabase
-      .from('profiles')
-      .upsert({
-        id: user.id,
-        avatar_url: publicUrl,
-        updated_at: new Date().toISOString(),
-      });
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      avatar_url: publicUrl,
+      updated_at: new Date().toISOString(),
+    });
 
     return { publicUrl, error: null };
   } catch (error) {

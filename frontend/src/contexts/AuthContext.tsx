@@ -278,7 +278,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           discriminator: data.discriminator,
           bio: data.bio,
           avatar_url: data.photoURL,
-          username: data.displayName, // 同期
+          // username は文字数制約や一意制約と衝突するため同期しない
           visibility_games: data.visibilityGames,
           visibility_matches: data.visibilityMatches,
           visibility_friends: data.visibilityFriends,
