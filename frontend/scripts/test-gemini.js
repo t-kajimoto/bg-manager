@@ -1,6 +1,12 @@
+require("dotenv").config({ path: ".env.local" });
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const API_KEY = "AIzaSyBnIWlWxivqEnWIWfFgrdQUf4GYZS6j4zU";
+const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
+if (!API_KEY) {
+  console.error("Error: GOOGLE_GENERATIVE_AI_API_KEY is not set in .env.local");
+  process.exit(1);
+}
 
 async function test() {
   console.log("Testing Gemini 2.5 Flash Lite with JSON Schema...");
