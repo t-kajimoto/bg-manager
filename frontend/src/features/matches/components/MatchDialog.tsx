@@ -6,7 +6,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { IBoardGame } from '@/features/boardgames/types';
 import { addMatch, updateMatch, uploadMatchImage } from '@/app/actions/boardgames';
-import { getProfiles, IProfile } from '@/app/actions/profiles';
+import { getProfiles, Profile } from '@/app/actions/profiles';
 import { useAuth } from '@/contexts/AuthContext';
 import { IMatch } from '../types';
 import { BaseDialog } from '@/components/ui/BaseDialog';
@@ -41,7 +41,7 @@ export const MatchDialog = ({ open, onClose, onSuccess, boardGames, initialData,
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [profiles, setProfiles] = useState<IProfile[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -92,7 +92,7 @@ export const MatchDialog = ({ open, onClose, onSuccess, boardGames, initialData,
       });
       setImagePreview(initialData.imageUrl || null);
     } else if (mode === 'add') {
-      const baseName = customUser?.nickname || customUser?.displayName || '自分';
+      const baseName = customUser?.displayName || authUser?.user_metadata?.full_name || '自分';
       const defaultName = customUser?.discriminator ? `${baseName}#${customUser.discriminator}` : baseName;
       reset({
         boardGameId: '',

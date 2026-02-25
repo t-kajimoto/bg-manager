@@ -66,7 +66,8 @@ export default function MatchesPage() {
           onClick={() => { setEditingMatch(null); setMatchDialogOpen(true); }}
           sx={{
             position: 'fixed',
-            bottom: { xs: 96, sm: 24 },
+            zIndex: 1150,
+            bottom: { xs: 'max(112px, calc(96px + env(safe-area-inset-bottom)))', sm: 24 },
             right: 24,
           }}
         >

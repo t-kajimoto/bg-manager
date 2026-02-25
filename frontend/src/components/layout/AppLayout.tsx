@@ -92,14 +92,11 @@ export function AppLayout({ children }: AppLayoutProps) {
             flexGrow: 1,
             // ナビゲーションの幅分だけ左マージンを取る
             ml: `${navWidth}px`,
-            // モバイルではBottom Navの高さ分だけ下パディング
-            pb: isCompact ? '96px' : 0,
-            // コンテンツの最小高さ（ヘッダー分を引く）
-            minHeight: 'calc(100vh - 64px)',
-            // M3のsurface背景色
-            backgroundColor: 'var(--md-sys-color-surface)',
-            // レスポンシブなパディング
-            p: { xs: 2, sm: 3, md: 4 },
+            // レスポンシブなパディング（pt, pxに分割し、pbは個別指定を活かす）
+            pt: { xs: 2, sm: 3, md: 4 },
+            px: { xs: 2, sm: 3, md: 4 },
+            // モバイルではBottom Navの高さ＋αの十分な下パディング
+            pb: { xs: '112px', sm: 3, md: 4 },
             // フェードインアニメーション
             animation: 'm3-fade-in 300ms cubic-bezier(0.2, 0, 0, 1) both',
             // ナビゲーション幅変更時のスムーズなトランジション

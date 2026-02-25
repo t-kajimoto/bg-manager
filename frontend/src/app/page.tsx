@@ -345,8 +345,10 @@ export default function Home() {
           onClick={() => setAddDialogOpen(true)}
           sx={{
             position: 'fixed',
-            // モバイルではBottom Navの上に配置
-            bottom: { xs: 96, sm: 24 },
+            // z-indexをBottom Navigation(1100)より上に設定
+            zIndex: 1150,
+            // モバイルではBottom Nav(80px)の上に配置。セーフエリアも考慮
+            bottom: { xs: 'max(112px, calc(96px + env(safe-area-inset-bottom)))', sm: 24 },
             right: 24,
             // M3 FABスタイル
             boxShadow: '0px 3px 5px -1px rgba(0,0,0,0.2), 0px 6px 10px 0px rgba(0,0,0,0.14), 0px 1px 18px 0px rgba(0,0,0,0.12)',
