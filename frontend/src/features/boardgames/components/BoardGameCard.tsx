@@ -16,26 +16,43 @@ interface BoardGameCardProps {
   onDelete?: (game: IBoardGame) => void;
   onEvaluation?: (game: IBoardGame) => void;
   onTagClick: (tag: string) => void;
+  /** カード本体（タイトル・画像）クリック時のコールバック */
+  onCardClick?: (game: IBoardGame) => void;
   readOnly?: boolean;
 }
 
-export const BoardGameCard = ({ game, onEdit, onDelete, onEvaluation, onTagClick, readOnly }: BoardGameCardProps) => {
+export const BoardGameCard = ({ game, onEdit, onDelete, onEvaluation, onTagClick, onCardClick, readOnly }: BoardGameCardProps) => {
   const { customUser } = useAuth();
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {game.thumbnailUrl && (
-        <CardMedia
-          component="img"
-          height="140"
-          image={game.thumbnailUrl}
-          alt={game.name}
-          sx={{ objectFit: 'contain', backgroundColor: '#f0f0f0', p: 1 }}
-        />
-      )}
+      {/* サムネイル: 画像がない場合はフォールバック画像を表示して見栄えを統一 */}
+      <CardMedia
+        component="img"
+        height="140"
+        image={game.thumbnailUrl || '/no_image.svg'}
+        alt={game.name}
+        onClick={() => onCardClick && onCardClick(game)}
+        sx={{
+          objectFit: 'contain',
+          backgroundColor: '#f0f0f0',
+          p: 1,
+          cursor: onCardClick ? 'pointer' : 'default',
+        }}
+      />
       <CardContent sx={{ flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Typography variant="h6" component="h2" gutterBottom sx={{ flexGrow: 1 }}>
+            <Typography
+              variant="h6"
+              component="h2"
+              gutterBottom
+              onClick={() => onCardClick && onCardClick(game)}
+              sx={{
+                flexGrow: 1,
+                cursor: onCardClick ? 'pointer' : 'default',
+                '&:hover': onCardClick ? { color: 'primary.main' } : {},
+              }}
+            >
                 {game.name}
             </Typography>
             {game.isOwned && (

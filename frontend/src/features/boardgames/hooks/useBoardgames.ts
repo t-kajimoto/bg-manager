@@ -52,7 +52,7 @@ export const useBoardgames = (userId?: string): UseBoardgamesReturn => {
     setError(null);
 
     try {
-      const { data, error } = await getBoardGames(userId);
+      const { data, error } = await getBoardGames(userId, !!userId);
       if (error) {
         throw new Error(error);
       }

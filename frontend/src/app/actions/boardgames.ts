@@ -5,7 +5,10 @@ import { IBoardGame } from '@/features/boardgames/types';
 import { IMatch } from '@/features/matches/types';
 import { revalidatePath } from 'next/cache';
 
-export async function getBoardGames(targetUserId?: string): Promise<{
+export async function getBoardGames(
+  targetUserId?: string,
+  ownedOnly: boolean = false,
+): Promise<{
   data: IBoardGame[];
   error: string | null;
 }> {
@@ -16,31 +19,80 @@ export async function getBoardGames(targetUserId?: string): Promise<{
       data: { user },
     } = await supabase.auth.getUser();
 
-    // 1. Fetch all board games
-    const { data: gamesData, error: gamesError } = await supabase
+    let filterGameIds: string[] | null = null;
+    const effectiveUserId = targetUserId || user?.id;
+
+    // ownedOnlyフラグが有効かつ対象ユーザーがいる場合、所持ゲームのIDリストを取得してフィルタリング
+    if (ownedOnly && effectiveUserId) {
+      const { data: ownedData, error: ownedError } = await supabase
+        .from('owned_games')
+        .select('board_game_id')
+        .eq('user_id', effectiveUserId);
+
+      if (ownedError) throw ownedError;
+
+      // 所持ゲームがない場合は即座に空配列を返す
+      if (!ownedData || ownedData.length === 0) {
+        return { data: [], error: null };
+      }
+
+      filterGameIds = ownedData.map((o) => o.board_game_id);
+    }
+
+    // 1. Fetch board games (filtered if needed)
+    let gamesQuery = supabase
       .from('board_games')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (gamesError) throw gamesError;
-    if (!gamesData) return { data: [], error: null };
+    if (filterGameIds) {
+      gamesQuery = gamesQuery.in('id', filterGameIds);
+    }
 
-    // 2. Fetch all user states (for calculating averages and checking if played)
-    const { data: userStatesData, error: userStatesError } = await supabase
-      .from('user_board_game_states')
-      .select('*');
+    const { data: gamesData, error: gamesError } = await gamesQuery;
+
+    if (gamesError) throw gamesError;
+    if (!gamesData || gamesData.length === 0) return { data: [], error: null };
+
+    // 2. Fetch user states (filtered by game IDs if possible to improve performance)
+    let statesQuery = supabase.from('user_board_game_states').select('*');
+
+    // 取得したゲームIDに関連するステータスのみ取得
+    const fetchedGameIds = gamesData.map((g) => g.id);
+    statesQuery = statesQuery.in('board_game_id', fetchedGameIds);
+
+    const { data: userStatesData, error: userStatesError } = await statesQuery;
 
     if (userStatesError) throw userStatesError;
 
-    // 3. Fetch owned status for effective user
-    const effectiveUserId = targetUserId || user?.id;
+    // 3. Fetch owned status for effective user (if check needed for isOwned flag)
+    // ownedOnly=trueの場合、取得したゲームはすべて所持しているはずだが、
+    // ownedOnly=falseの場合や、念のため再確認のために取得。
+    // すでにfilterGameIdsがある場合はそれを使えるが、
+    // effectiveUserIdの所持リストは全件取得しないと、isOwnedフラグが正しくつかない（filterGameIdsはtargetUserIdのものかもしれない）
+    // targetUserIdとcurrentUserが違う場合（他人のプロフィールを見ている時）、
+    // 「その人が持っているゲーム」リストの中で「自分が持っているか」判定が必要。
+
     const { data: ownedData } = effectiveUserId
       ? await supabase
           .from('owned_games')
           .select('board_game_id')
-          .eq('user_id', effectiveUserId)
-      : { data: [] };
-    const ownedGameIds = new Set(ownedData?.map((o) => o.board_game_id) || []);
+          .eq('user_id', effectiveUserId) // ここはcurrentUser(user.id)であるべきでは？
+      : // いや、effectiveUserIdは「表示対象のユーザー」か「ログインユーザー」
+        // isOwnedフラグは「ログインユーザーが持っているか」を示すべき。
+        { data: [] };
+
+    // isOwnedフラグ判定用には、常に「ログインユーザー(user.id)」の所持リストが必要
+    let currentUserOwnedGameIds = new Set<string>();
+    if (user) {
+      const { data: myOwned } = await supabase
+        .from('owned_games')
+        .select('board_game_id')
+        .eq('user_id', user.id);
+      currentUserOwnedGameIds = new Set(
+        myOwned?.map((o) => o.board_game_id) || [],
+      );
+    }
 
     // 4. Combine data (Server-side Join)
     const combinedGames: IBoardGame[] = gamesData.map((game) => {
@@ -89,7 +141,7 @@ export async function getBoardGames(targetUserId?: string): Promise<{
         categories: game.categories,
         averageRating: game.average_rating,
         complexity: game.complexity,
-        isOwned: ownedGameIds.has(game.id),
+        isOwned: currentUserOwnedGameIds.has(game.id),
       };
     });
 
